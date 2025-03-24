@@ -1,5 +1,5 @@
 {
     "board": "arduino:avr:micro",
     "port": "COM8",
-    "sketch": "Arduino_test.ino"
+    "sketch": "PID_controller\\PID_controller.ino"
 }
