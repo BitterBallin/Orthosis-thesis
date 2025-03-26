@@ -44,7 +44,7 @@
 
 
 int pwmPin = 4; // PWM pin (make sure it's ~ capable)
-int dirPin = 3; // Direction pin
+int dirPin = 7; // Direction pin
 int speed = 0; // PWM value (0-255) ~40% duty cycle
 
 void setup() {
