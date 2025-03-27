@@ -19,9 +19,9 @@ bool MagneticAngleSensor::begin() {
 }
 
 float MagneticAngleSensor::getAngle() {
-    return sensor.readAngle(); // Read the sensor angle
+    return sensor.readAngle()* AS5600_RAW_TO_DEGREES; // Read the sensor angle
 }
 
 float MagneticAngleSensor::getRawAngle() {
-    return sensor.rawAngle() * AS5600_RAW_TO_DEGREES;
+    return sensor.rawAngle();
 }
