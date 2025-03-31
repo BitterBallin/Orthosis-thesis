@@ -55,7 +55,33 @@ class MotorController {
       int _speed;  // Current speed
   };
 
+MotorController::MotorController(int pwmPin, int dirPin) {
+    _pwmPin = pwmPin;
+    _dirPin = dirPin;
+}
 
+// Initialize motor pins
+void MotorController::begin() {
+    pinMode(_pwmPin, OUTPUT);
+    pinMode(_dirPin, OUTPUT);
+}
+
+// Move forward at a given speed
+void MotorController::moveForward(int speed) {
+    digitalWrite(_dirPin, HIGH);  // Set direction to forward
+    analogWrite(_pwmPin, speed);  // Set PWM speed
+}
+
+// Move in reverse at a given speed
+void MotorController::moveReverse(int speed) {
+    digitalWrite(_dirPin, LOW);   // Set direction to reverse
+    analogWrite(_pwmPin, speed);  // Set PWM speed
+}
+
+// Stop the motor
+void MotorController::stop() {
+    analogWrite(_pwmPin, 0);  // Set speed to zero
+}
 // Create an instance of MotorController
 MotorController motor(11, 12);  // PWM on pin 11, direction on pin 12
 
@@ -159,7 +185,7 @@ unsigned long last = 0;
 void get_angle()
 {
     unsigned long now = micros();
-    // Serial.println(now - last);  // prints loop time in µs
+    Serial.println(now - last);  // prints loop time in µs
     last = now;
     // 1. Read current angle from AS5600
     float currentAngle = sensor.readAngle()* AS5600_RAW_TO_DEGREES;  // in degrees (0 to 360)
@@ -188,8 +214,8 @@ void get_angle()
     // Serial.print(currentAngle);
     // Serial.print("° | Angle Delta: ");
     // Serial.print(AngleDelta);
-    // Serial.print("° | Rotation Count: ");
-    // Serial.println(rotationCount);
+    Serial.print("° | Rotation Count: ");
+    Serial.println(rotationCount);
 
 }
 
@@ -222,8 +248,8 @@ void calculate_PID() {
         rvar = r0;
         Position = 0;
 
-        // Serial.println("[DEBUG] Rotation count < 1 → setting initial values.");
-        // Serial.print("X = "); Serial.println(X, 6);
+        Serial.println("[DEBUG] Rotation count < 1 → setting initial values.");
+        Serial.print("X = "); Serial.println(X, 6);
         // Serial.print("rvar = "); Serial.println(rvar, 6);
         // Serial.print("Position = "); Serial.println(Position, 6);
     } else {
@@ -243,7 +269,7 @@ void calculate_PID() {
         // Serial.print("rotationCount_rad = "); Serial.println(rotationCount_rad, 6);
         // Serial.print("rvar = "); Serial.println(rvar, 6);
         // Serial.print("X = "); Serial.println(X, 6);
-        // Serial.print("Delta_X (Position) = "); Serial.println(Position, 6);
+        Serial.print("Delta_X (Position) = "); Serial.println(Position, 6);
 }
 
 
@@ -263,7 +289,23 @@ void calculate_PID() {
 
     // controlSignal = 0;
 
+    previousError = errorValue; //save the error for the next iteration to get the difference (for edot)
+    Serial.print("errorValue: ");
+    Serial.print(errorValue);
+    // Serial.print("Control Signal:"); Serial.print(controlSignal);
 
+
+    // Serial Prints in Plot format
+    //-----------------------------
+    Serial.print(errorValue);
+    Serial.print(",");
+    Serial.print(controlSignal);
+    Serial.print(",");
+    Serial.println(Position);
+    //-----------------------------
+
+    // Serial.print(" edot:"); Serial.print(edot);
+    // Serial.print(" errorIntegral:"); Serial.print(errorIntegral);
 }
 
 void DriveMotor()
@@ -351,31 +393,6 @@ void DriveMotor()
           //  Serial.stop()
            while (true);
        }
-
-
-
-
-
-           // previousError = errorValue; //save the error for the next iteration to get the difference (for edot)
-    // Serial.print("errorValue: ");
-    // Serial.print(errorValue);
-    // Serial.print("Control Signal:"); Serial.print(controlSignal);
-
-
-    // Serial Prints in Plot format
-    //-----------------------------
-    
-    Serial.print(errorValue);
-    Serial.print(",");
-    Serial.print(controlSignal);
-    Serial.print(",");
-    Serial.println(Position);
-    
-    //-----------------------------
-
-    // Serial.print(" edot:"); Serial.print(edot);
-    // Serial.print(" errorIntegral:"); Serial.print(errorIntegral);
-    // Serial.print("Angle: ");
 
 
 
