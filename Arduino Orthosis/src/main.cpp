@@ -1,36 +1,9 @@
-
-
-// // // #include <Wire.h>
-
-// // // void setup() {
-// // //   Serial.begin(115200);
-// // //   while (!Serial);  // Wait for Serial Monitor
-// // //   delay(1000);      // Delay for serial stability
-
-// // //   Serial.println("Starting I2C Scanner...");
-  
-// // //   Wire.begin();  // Start I2C communication
-  
-// // //   for (byte address = 1; address < 127; address++) {
-// // //     Wire.beginTransmission(address);
-// // //     if (Wire.endTransmission() == 0) {
-// // //       Serial.print("Found I2C device at address 0x");
-// // //       Serial.println(address, HEX);
-// // //     }
-// // //   }
-  
-// // //   Serial.println("Scan complete.");
-// // // }
-
-// // // void loop() {}
 #include <Arduino.h>
 #include <Wire.h>
 #include <math.h>
 // #include "PID_controller/Magnetic_angle_sensor.h"
 // #include "PID_controller/PID_controller.h"
 #include <AS5600.h>
-
-
 
 class MotorController {
   public:
@@ -59,16 +32,10 @@ class MotorController {
 // Create an instance of MotorController
 MotorController motor(11, 12);  // PWM on pin 11, direction on pin 12
 
-
 // MagneticAngleSensor sensor; // Create an instance of the class
 AS5600 sensor;
 
-// // Defining speed
-// int motorSpeed = 200; // duty cycle (0/255)
-// int rotationsLimit = 10; // Number of rotations to perform
-
 int PWMValue = 0; //0-255 PWM value for speed, external PWM boards can go higher (e.g. PCA9685: 12-bit => 0-4095)
-
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
@@ -85,9 +52,6 @@ float currentTime = 0; //time in the moment of calculation
 float deltaTime = 0; //time difference
 float errorValue = 0; //error
 float edot = 0; //derivative (de/dt)
-
-
-
 
 // Initiate time variable
 unsigned long startTime;
@@ -113,7 +77,6 @@ void setup() {
         Serial.println("AS5600 initialized.");
     }
 
-
     int b = sensor.isConnected();  // Check connection status
     control_reg_0 = sensor.getConfigure();  // Read current CONF register
 
@@ -132,26 +95,15 @@ void setup() {
     Serial.print(", confaf=0x");
     Serial.println(control_reg_1, HEX);
 
-
-    
-
     delay(1000);
 
     // Initialize the motor
     motor.begin();
 
-
- 
 }
-
-
 
 float prevAngle = 0.0;
 int rotationCount = 0;
-
-// const int angleHistorySize = 1000;  // Max number of saved angles
-// float angleHistory[angleHistorySize];
-// int angleIndex = 0;
 
 //Code to check how often get_angle gets called
 unsigned long last = 0;
@@ -163,10 +115,6 @@ void get_angle()
     last = now;
     // 1. Read current angle from AS5600
     float currentAngle = sensor.readAngle()* AS5600_RAW_TO_DEGREES;  // in degrees (0 to 360)
-
-    // // 2. Save current angle in history array
-    // angleHistory[angleIndex] = currentAngle;
-    // angleIndex = (angleIndex + 1) % angleHistorySize;  // Wrap around if full
 
     // 2. Calculate difference from previous angle
     float AngleDelta = currentAngle - prevAngle;
@@ -182,14 +130,6 @@ void get_angle()
 
     // 4. Save current angle as previous for next loop
     prevAngle = currentAngle;
-
-    // // 5. Print angle info
-    // Serial.print("Current Angle: ");
-    // Serial.print(currentAngle);
-    // Serial.print("° | Angle Delta: ");
-    // Serial.print(AngleDelta);
-    // Serial.print("° | Rotation Count: ");
-    // Serial.println(rotationCount);
 
 }
 
@@ -208,9 +148,10 @@ float  X = Lc;
 float rvar = r0;
 float Position = 0;
 
-
 // Targets
 float targetPosition = 0.03 ; //target position in [m]
+float reverse_threshold = 0.005; //Threshold for reversing motion in [m]
+bool goingForward = true;  // Direction flag
 
 
 void calculate_PID() {
@@ -222,10 +163,6 @@ void calculate_PID() {
         rvar = r0;
         Position = 0;
 
-        // Serial.println("[DEBUG] Rotation count < 1 → setting initial values.");
-        // Serial.print("X = "); Serial.println(X, 6);
-        // Serial.print("rvar = "); Serial.println(rvar, 6);
-        // Serial.print("Position = "); Serial.println(Position, 6);
     } else {
         rvar = r0 * sqrt(Lc / X);
 
@@ -239,14 +176,7 @@ void calculate_PID() {
             float Delta_X = Lc - X; // Delta_X is zero at start when X = Lc, then increases as wire and X contracts.
         Position = Delta_X;
 
-        // Serial.println("[DEBUG] Rotation count ≥ 1 → calculating wire contraction.");
-        // Serial.print("rotationCount_rad = "); Serial.println(rotationCount_rad, 6);
-        // Serial.print("rvar = "); Serial.println(rvar, 6);
-        // Serial.print("X = "); Serial.println(X, 6);
-        // Serial.print("Delta_X (Position) = "); Serial.println(Position, 6);
 }
-
-
 
     //Determining the elapsed time
     currentTime = micros(); //current time
@@ -255,6 +185,23 @@ void calculate_PID() {
     //---
     errorValue = - Position + targetPosition; //Current position - target position (or setpoint)
 
+    if (goingForward && abs(errorValue) < reverse_threshold) {
+        goingForward = false;
+        targetPosition = 0.0;
+        errorIntegral = 0;
+        previousError = 0;
+    } 
+    // else if (!goingForward && abs(errorValue) < reverse_threshold) {
+    //     goingForward = true;
+    //     targetPosition = 0.03;  // or your max ROM
+    //     errorIntegral = 0;
+    //     previousError = 0;
+    // }
+
+    // if (errorValue < reverse_threshold){
+    //     errorValue = Position - targetPosition; //Reverse target to go back to beginning of ROM
+    // }
+
     edot = (errorValue - previousError) / deltaTime; //edot = de/dt - derivative term
 
     errorIntegral = errorIntegral + (errorValue * deltaTime); //integral term - Newton-Leibniz, notice, this is a running sum!
@@ -262,7 +209,6 @@ void calculate_PID() {
     controlSignal = (proportional * errorValue) + (derivative * edot) + (integral * errorIntegral); //final sum, proportional term also calculated here
 
     // controlSignal = 0;
-
 
 }
 
@@ -288,10 +234,10 @@ void DriveMotor()
         //   PWMValue = -255; //capping the PWM signal - 8 bit
         // }
 
-        if (PWMValue < 90 && errorValue != 0)
-        {
-          PWMValue = 90;
-        }
+        // if (PWMValue < 90 && errorValue != 0)
+        // {
+        //   PWMValue = 90;
+        // }
 
         // if (PWMValue < -90 && errorValue != 0)
         // {
@@ -303,48 +249,19 @@ void DriveMotor()
         if (controlSignal < -90) //negative value: CCW
         {
             motor.moveReverse(PWMValue);
-            Serial.print("Reversing motor")
+            // Serial.print("Reversing motor");
         }
         else if (controlSignal > 90) //positive: CW
         {
             motor.moveForward(PWMValue);
-            Serial.print("Forward movement motor")
+            // Serial.print("Forward movement motor");
         }
         else //0: STOP - this might be a bad practice when you overshoot the setpoint
         {
             motor.stop();
         }
-   
-  //Optional printing on the terminal to check what's up
-  
-        // Serial.print(" |ErrorValue: ");
-        // Serial.print(errorValue);
-        // Serial.print(" |PWMValue: ");
-        // Serial.print(PWMValue);
-        // Serial.print("Current time: ");
-        // Serial.print(currentTime);
-        // Serial.print("Current time: ");
-        // Serial.print(micros());
-        // Serial.print(" |TargetPosition: ");
-        // Serial.print(targetPosition);
-        // Serial.print(" |Position: ");
-        // Serial.print(Position);
-        // Serial.println();
 
     }
-
-    // void printAngleHistory() {
-    //     Serial.println("\n=== Angle History ===");
-    //     for (int i = 0; i < 1000; i++) {
-    //         Serial.print(i);
-    //         Serial.print(": ");
-    //         Serial.println(angleHistory[i], 3);  // 3 decimal places
-    //     }
-    // }
-
-
-    
-
 
     void loop() {
 
@@ -356,13 +273,6 @@ void DriveMotor()
     
         // Driving motor
         DriveMotor();
-    
-        // Stop after 10 rotations
-        // if (abs(rotationCount) >= 10) {
-        //     motor.stop();
-        //     Serial.println("Stopped after 10 rotations.");
-        //     while (true);
-        // }
 
         static unsigned long lastPrintTime = 0;
         unsigned long now = millis();
