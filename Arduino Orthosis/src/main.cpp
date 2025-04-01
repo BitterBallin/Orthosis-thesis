@@ -72,9 +72,9 @@ int PWMValue = 0; //0-255 PWM value for speed, external PWM boards can go higher
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 700; //k_p = 0.5
-float integral = 100; //k_i = 3
-float derivative = 700; //k_d = 1
+float proportional = 100; //k_p = 0.5
+float integral = 10; //k_i = 3
+float derivative = 50; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
 
 //PID-related
@@ -282,11 +282,11 @@ void DriveMotor()
 
         //Determine speed and direction based on the value of the control signal
         //direction
-        if (controlSignal < 0) //negative value: CCW
+        if (controlSignal < -90) //negative value: CCW
         {
             motor.moveReverse(PWMValue);
         }
-        else if (controlSignal > 0) //positive: CW
+        else if (controlSignal > 90) //positive: CW
         {
             motor.moveForward(PWMValue);
 
@@ -323,6 +323,11 @@ void DriveMotor()
     //     }
     // }
 
+
+    
+    static unsigned long lastPrintTime = 0;
+    unsigned long now = millis();
+    
     void loop() {
 
         // Sensor readout
@@ -340,6 +345,18 @@ void DriveMotor()
         //     Serial.println("Stopped after 10 rotations.");
         //     while (true);
         // }
+
+        if (now - lastPrintTime >= 10) {  // Print every 10ms (100 Hz)
+            lastPrintTime = now;
+
+            Serial.print(errorValue);
+            Serial.print(",");
+            Serial.print(controlSignal);
+            Serial.print(",");
+            Serial.print(Position);
+            Serial.print(",");
+            Serial.println(targetPosition);
+        }
     
       //  Stop after 10 seconds
        unsigned long elapsedTime = micros() - startTime;
@@ -369,7 +386,10 @@ void DriveMotor()
     Serial.print(",");
     Serial.print(controlSignal);
     Serial.print(",");
-    Serial.println(Position);
+    Serial.print(Position);
+    Serial.print(",");
+    Serial.println(targetPosition);
+
     
     //-----------------------------
 
