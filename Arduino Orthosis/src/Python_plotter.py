@@ -19,6 +19,8 @@ error_vals = deque(maxlen=buffer_size)
 control_vals = deque(maxlen=buffer_size)
 position_vals = deque(maxlen=buffer_size)
 target_vals = deque(maxlen=buffer_size)
+time_vals = deque(maxlen=buffer_size)
+
 
 plt.ion()
 fig, ax = plt.subplots()
@@ -39,31 +41,35 @@ while True:
     try:
         parts = line.strip().split(",")
 
-        if len(parts) != 4:
-            raise ValueError("Line does not have exactly 4 parts")
+        if len(parts) != 5:
+            raise ValueError("Line does not have exactly 5 parts")
 
-        # Safe float parsing
-        error = float(parts[0]) * 1000
-        control = float(parts[1])/100
-        position = float(parts[2]) * 1000
-        target = float(parts[3]) * 1000
+        timestamp = float(parts[0])  # already in seconds
+        error = float(parts[1]) * 1000
+        control = float(parts[2]) / 100
+        position = float(parts[3]) * 1000
+        target = float(parts[4]) * 1000
 
-        # print(f"Error: {error}, Control: {control}, Position: {position}, Target: {target}")
-
+        time_vals.append(timestamp)
         error_vals.append(error)
         control_vals.append(control)
         position_vals.append(position)
         target_vals.append(target)
 
         ax.clear()
-        ax.plot(error_vals, label='Error')
-        ax.plot(control_vals, label='Control')
-        ax.plot(position_vals, label='Position')
-        ax.plot(target_vals, label='Target Position')
-        ax.legend()
-        plt.pause(0.001)
+        ax.plot(time_vals, error_vals, label='Error')
+        ax.plot(time_vals, control_vals, label='Control')
+        ax.plot(time_vals, position_vals, label='Position')
+        ax.plot(time_vals, target_vals, label='Target Position')
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Distances in mm, control/100")
+        
+        plt.pause(0.001)  # <-- refresh plot window
+        line_count += 1   # <-- only increment if valid data
 
-        line_count += 1
+        if line_count >= (max_lines - skip_last):
+            print("Reached max usable lines, exiting...")
+            break
 
     except ValueError as e:
         print(f"[Skipped] {line} → {e}")

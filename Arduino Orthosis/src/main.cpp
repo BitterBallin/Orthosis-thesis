@@ -351,21 +351,23 @@ void DriveMotor()
 
         if (now - lastPrintTime >= 1000/print_Hz) {  
             lastPrintTime = now;
-
-            Serial.print(errorValue);
+            unsigned long elapsedTime = micros() - startTime;
+            Serial.print(elapsedTime / 1000000.0, 2); // in seconds with 2 decimal places
+            Serial.print(",");
+            Serial.print(errorValue,5);
             Serial.print(",");
             Serial.print(controlSignal);
             Serial.print(",");
-            Serial.print(Position);
+            Serial.print(Position,5);
             Serial.print(",");
             Serial.println(targetPosition);
         }
-    
-      //  Stop after 5 seconds
+
+      //  Stop after 7 seconds
        unsigned long elapsedTime = micros() - startTime;
-       if (elapsedTime >= 5000000UL) {
+       if (elapsedTime >= 7000000UL) {
            motor.stop();
-           Serial.println("Stopped after 10 seconds.");
+           Serial.println("Stopped after 7 seconds.");
         //    printAngleHistory();
           //  Serial.print(rotationCount);
           //  Serial.stop()
