@@ -44,7 +44,7 @@ while True:
 
         # Safe float parsing
         error = float(parts[0]) * 1000
-        control = float(parts[1])
+        control = float(parts[1])/100
         position = float(parts[2]) * 1000
         target = float(parts[3]) * 1000
 

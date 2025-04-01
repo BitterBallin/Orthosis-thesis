@@ -72,9 +72,9 @@ int PWMValue = 0; //0-255 PWM value for speed, external PWM boards can go higher
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 100; //k_p = 0.5
-float integral = 10; //k_i = 3
-float derivative = 50; //k_d = 1
+float proportional = 50; //k_p = 0.5
+float integral = 1; //k_i = 3
+float derivative = 20; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
 
 //PID-related
@@ -325,9 +325,8 @@ void DriveMotor()
 
 
     
-    static unsigned long lastPrintTime = 0;
-    unsigned long now = millis();
-    
+
+
     void loop() {
 
         // Sensor readout
@@ -346,7 +345,11 @@ void DriveMotor()
         //     while (true);
         // }
 
-        if (now - lastPrintTime >= 10) {  // Print every 10ms (100 Hz)
+        static unsigned long lastPrintTime = 0;
+        unsigned long now = millis();
+        float print_Hz = 50;
+
+        if (now - lastPrintTime >= 1000/print_Hz) {  
             lastPrintTime = now;
 
             Serial.print(errorValue);
@@ -358,9 +361,9 @@ void DriveMotor()
             Serial.println(targetPosition);
         }
     
-      //  Stop after 10 seconds
+      //  Stop after 5 seconds
        unsigned long elapsedTime = micros() - startTime;
-       if (elapsedTime >= 20000000UL) {
+       if (elapsedTime >= 5000000UL) {
            motor.stop();
            Serial.println("Stopped after 10 seconds.");
         //    printAngleHistory();
@@ -368,35 +371,6 @@ void DriveMotor()
           //  Serial.stop()
            while (true);
        }
-
-
-
-
-
-           // previousError = errorValue; //save the error for the next iteration to get the difference (for edot)
-    // Serial.print("errorValue: ");
-    // Serial.print(errorValue);
-    // Serial.print("Control Signal:"); Serial.print(controlSignal);
-
-
-    // Serial Prints in Plot format
-    //-----------------------------
-    
-    Serial.print(errorValue);
-    Serial.print(",");
-    Serial.print(controlSignal);
-    Serial.print(",");
-    Serial.print(Position);
-    Serial.print(",");
-    Serial.println(targetPosition);
-
-    
-    //-----------------------------
-
-    // Serial.print(" edot:"); Serial.print(edot);
-    // Serial.print(" errorIntegral:"); Serial.print(errorIntegral);
-    // Serial.print("Angle: ");
-
 
 
        
