@@ -150,7 +150,7 @@ float Position = 0;
 
 // Targets
 float targetPosition = 0.03 ; //target position in [m]
-float reverse_threshold = 0.005; //Threshold for reversing motion in [m]
+float reverse_threshold = 0.001; //Threshold for reversing motion in [m]
 bool goingForward = true;  // Direction flag
 
 
@@ -234,24 +234,24 @@ void DriveMotor()
         //   PWMValue = -255; //capping the PWM signal - 8 bit
         // }
 
-        // if (PWMValue < 90 && errorValue != 0)
-        // {
-        //   PWMValue = 90;
-        // }
+        if (PWMValue < 90 && errorValue != 0)
+        {
+          PWMValue = 90;
+        }
 
-        // if (PWMValue < -90 && errorValue != 0)
-        // {
-        //   PWMValue = -90;
-        // }
+        if (PWMValue < -90 && errorValue != 0)
+        {
+          PWMValue = -90;
+        }
 
         //Determine speed and direction based on the value of the control signal
         //direction
-        if (controlSignal < -90) //negative value: CCW
+        if (controlSignal < 0) //negative value: CCW
         {
             motor.moveReverse(PWMValue);
             // Serial.print("Reversing motor");
         }
-        else if (controlSignal > 90) //positive: CW
+        else if (controlSignal > 0) //positive: CW
         {
             motor.moveForward(PWMValue);
             // Serial.print("Forward movement motor");
