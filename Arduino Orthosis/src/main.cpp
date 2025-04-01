@@ -210,7 +210,7 @@ float Position = 0;
 
 
 // Targets
-float targetPosition = 0.1 ; //target position in [m]
+float targetPosition = 0.03 ; //target position in [m]
 
 
 void calculate_PID() {
@@ -267,29 +267,48 @@ void calculate_PID() {
 }
 
 void DriveMotor()
+
+
+
     {
         //Speed
         PWMValue = (int)fabs(controlSignal); //PWM values cannot be negative and have to be integers
+
+        //Uncomment to reverse motor
+        //------------------------------------------
+        // PWMValue = -(int)fabs(controlSignal);
+
         if (PWMValue > 255) //fabs() = floating point absolute value
         {
           PWMValue = 255; //capping the PWM signal - 8 bit
         }
       
+        // if (PWMValue < -255) //fabs() = floating point absolute value
+        // {
+        //   PWMValue = -255; //capping the PWM signal - 8 bit
+        // }
+
         if (PWMValue < 90 && errorValue != 0)
         {
           PWMValue = 90;
         }
+
+        // if (PWMValue < -90 && errorValue != 0)
+        // {
+        //   PWMValue = -90;
+        // }
 
         //Determine speed and direction based on the value of the control signal
         //direction
         if (controlSignal < -90) //negative value: CCW
         {
             motor.moveReverse(PWMValue);
+            Serial.print("Reversing motor")
         }
         else if (controlSignal > 90) //positive: CW
         {
             motor.moveForward(PWMValue);
-
+            Serial.print("Forward movement motor")
         }
         else //0: STOP - this might be a bad practice when you overshoot the setpoint
         {
@@ -367,7 +386,9 @@ void DriveMotor()
        unsigned long elapsedTime = micros() - startTime;
        if (elapsedTime >= 7000000UL) {
            motor.stop();
+           Serial.println("END");
            Serial.println("Stopped after 7 seconds.");
+           
         //    printAngleHistory();
           //  Serial.print(rotationCount);
           //  Serial.stop()

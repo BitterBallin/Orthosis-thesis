@@ -14,13 +14,14 @@ buffer_size = 1000
 # === Setup ===
 ser = serial.Serial(port, baudrate)
 time.sleep(2)  # Let Arduino reset
+ser.reset_input_buffer()  # Flush old junk from buffer
 
+# Data buffers
 error_vals = deque(maxlen=buffer_size)
 control_vals = deque(maxlen=buffer_size)
 position_vals = deque(maxlen=buffer_size)
 target_vals = deque(maxlen=buffer_size)
 time_vals = deque(maxlen=buffer_size)
-
 
 plt.ion()
 fig, ax = plt.subplots()
@@ -33,6 +34,10 @@ while True:
     if line_count < skip_first:
         line_count += 1
         continue
+
+    if "END" in line:
+        print("Arduino finished test.")
+        break
 
     if line_count >= (max_lines - skip_last):
         print("Reached max usable lines, exiting...")
@@ -63,18 +68,44 @@ while True:
         ax.plot(time_vals, target_vals, label='Target Position')
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Distances in mm, control/100")
-        
-        plt.pause(0.001)  # <-- refresh plot window
-        line_count += 1   # <-- only increment if valid data
+        ax.legend()
 
-        if line_count >= (max_lines - skip_last):
-            print("Reached max usable lines, exiting...")
-            break
+        plt.pause(0.001)
+        line_count += 1
 
     except ValueError as e:
         print(f"[Skipped] {line} → {e}")
         continue
 
+# === Settling Time Calculation ===
+settling_threshold = 5  # mm
+required_stable_points = 10
+
+settling_time = None
+final_error = error_vals[-1]
+
+for i in range(len(error_vals) - required_stable_points):
+    window = list(error_vals)[i:i + required_stable_points]
+    if all(abs(e - final_error) <= settling_threshold for e in window):
+        settling_time = time_vals[i]
+        break
+
+# === Final Outputs ===
+print("\n=== Final Values ===")
+print(f"Time: {time_vals[-1]:.3f} s")
+print(f"Error: {error_vals[-1]:.3f} mm")
+print(f"Control: {control_vals[-1]:.3f}")
+print(f"Position: {position_vals[-1]:.3f} mm")
+print(f"Target: {target_vals[-1]:.3f} mm")
+if settling_time is not None:
+    print(f"Settling Time: {settling_time:.3f} seconds")
+else:
+    print("No settling time detected.")
+
 plt.ioff()
-plt.show()
+plt.show(block=True)
 ser.close()
+
+
+
+
