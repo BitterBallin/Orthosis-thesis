@@ -3,17 +3,21 @@ import time
 import matplotlib.pyplot as plt
 from collections import deque
 
+#Close all open figures
+plt.close('all')
+
+
 # === USER SETTINGS ===
 port = 'COM12'
 baudrate = 115200
-max_lines = 1000
-skip_first = 10
+max_lines = 2000
+skip_first = 5
 skip_last = 2
-buffer_size = 1000
+buffer_size = 2000
 
 # === Setup ===
 ser = serial.Serial(port, baudrate)
-time.sleep(2)  # Let Arduino reset
+# time.sleep(1)  # Let Arduino reset
 ser.reset_input_buffer()  # Flush old junk from buffer
 
 # Data buffers

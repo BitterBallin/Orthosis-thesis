@@ -39,7 +39,7 @@ int PWMValue = 0; //0-255 PWM value for speed, external PWM boards can go higher
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 50; //k_p = 0.5
+float proportional = 70; //k_p = 0.5
 float integral = 1; //k_i = 3
 float derivative = 20; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
@@ -60,6 +60,7 @@ unsigned long startTime;
 void setup() {
 
     Serial.begin(115200);
+    delay(2000); //Delay start of script so that python script can catch beginning.
     Wire.begin(); //start i2C
     Wire.setClock(400000L); //faster clock speed
     while (!Serial); // Wait for Serial Monitor
@@ -149,8 +150,8 @@ float rvar = r0;
 float Position = 0;
 
 // Targets
-float targetPosition = 0.03 ; //target position in [m]
-float reverse_threshold = 0.001; //Threshold for reversing motion in [m]
+float targetPosition = 0.05 ; //target position in [m]
+float reverse_threshold = 0.0005; //Threshold for reversing motion in [m]
 bool goingForward = true;  // Direction flag
 
 
@@ -292,12 +293,12 @@ void DriveMotor()
             Serial.println(targetPosition);
         }
 
-      //  Stop after 7 seconds
+      //  Stop after 10 seconds
        unsigned long elapsedTime = micros() - startTime;
-       if (elapsedTime >= 7000000UL) {
+       if (elapsedTime >= 10000000UL) {
            motor.stop();
            Serial.println("END");
-           Serial.println("Stopped after 7 seconds.");
+           Serial.println("Stopped after 10 seconds.");
            
         //    printAngleHistory();
           //  Serial.print(rotationCount);
