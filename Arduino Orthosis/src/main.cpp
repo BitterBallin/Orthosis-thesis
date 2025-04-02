@@ -140,7 +140,7 @@ void get_angle()
 // Defining static wire characteristics
 float K = 300000; // [N/m] Stifness of wire
 float Fi = 0; // static load [N]
-float L = 0.65; // original wire length in [m]
+float L = 0.6; // original wire length in [m]
 float Lc = L  + Fi/K; // wire length in [m] with load
 float r0 = 0.28 * pow(10, -3);  // wire diameter in [m]
 
