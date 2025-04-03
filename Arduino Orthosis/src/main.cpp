@@ -39,7 +39,7 @@ int PWMValue = 0; //0-255 PWM value for speed, external PWM boards can go higher
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 70; //k_p = 0.5
+float proportional = 90; //k_p = 0.5
 float integral = 1; //k_i = 3
 float derivative = 20; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
@@ -140,7 +140,8 @@ void get_angle()
 // Defining static wire characteristics
 float K = 300000; // [N/m] Stifness of wire
 float Fi = 0; // static load [N]
-float L = 0.6; // original wire length in [m]
+float braid_factor = 1.1; //Increasing wire length based on braided wire structure to compensate real life length
+float L = 0.9*braid_factor; // original wire length in [m]
 float Lc = L  + Fi/K; // wire length in [m] with load
 float r0 = 0.28 * pow(10, -3);  // wire diameter in [m]
 
@@ -150,7 +151,7 @@ float rvar = r0;
 float Position = 0;
 
 // Targets
-float targetPosition = 0.05 ; //target position in [m]
+float targetPosition = 0.08 ; //target position in [m]
 float reverse_threshold = 0.0005; //Threshold for reversing motion in [m]
 bool goingForward = true;  // Direction flag
 
