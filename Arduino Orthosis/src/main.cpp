@@ -151,7 +151,7 @@ float rvar = r0;
 float Position = 0;
 
 // Targets
-float targetPosition = 0.08 ; //target position in [m]
+float targetPosition = 0.03 ; //target position in [m]
 float reverse_threshold = 0.0005; //Threshold for reversing motion in [m]
 bool goingForward = true;  // Direction flag
 
