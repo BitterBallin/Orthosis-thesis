@@ -444,3 +444,136 @@ void DriveMotor()
 //   Serial.println("Test complete. Restarting...");
 //   delay(3000);  // Wait before restarting test
 // }
+
+
+
+
+
+
+// // PWM SIGNAL TEST CODE, HIGH VS 255
+// //--------------------------------------------------------
+// #include <Arduino.h>
+// #include <Wire.h>
+// #include <AS5600.h>
+
+// AS5600 sensor;
+
+// // Motor pins
+// const int pwmPin = 11;
+// const int dirPin = 12;
+
+// // Test config
+// const unsigned long testDuration = 10 * 1000000UL; // 10 seconds in microseconds
+// bool useAnalogWrite = false; // Set to false to use digitalWrite(HIGH)
+// bool testRunning = false;
+
+// // Rotation tracking
+// float prevAngle = 0.0;
+// int rotationCount = 0;
+// unsigned long startTime;
+
+// void setup() {
+//   Serial.begin(115200);
+//   Wire.begin();
+//   sensor.begin();
+
+//   pinMode(pwmPin, OUTPUT);
+//   pinMode(dirPin, OUTPUT);
+
+//   digitalWrite(dirPin, HIGH); // Set forward direction
+//   delay(1000);
+
+//   // Read initial angle
+//   prevAngle = sensor.readAngle() * AS5600_RAW_TO_DEGREES;
+
+//   // Start motor
+//   if (useAnalogWrite) {
+//     analogWrite(pwmPin, 255);  // PWM 100% duty cycle
+//     Serial.println("Running test with analogWrite(255)");
+//   } else {
+//     digitalWrite(pwmPin, HIGH);  // Constant HIGH
+//     Serial.println("Running test with digitalWrite(HIGH)");
+//   }
+
+//   startTime = micros();
+//   testRunning = true;
+// }
+
+// void loop() {
+//   if (!testRunning) return;
+
+//   unsigned long now = micros();
+//   float currentAngle = sensor.readAngle() * AS5600_RAW_TO_DEGREES;
+//   float angleDelta = currentAngle - prevAngle;
+
+//   // Handle wraparound
+//   if (angleDelta < -300) rotationCount++;
+//   else if (angleDelta > 300) rotationCount--;
+
+//   prevAngle = currentAngle;
+
+//   // Stop after test duration
+//   if (now - startTime >= testDuration) {
+//     if (useAnalogWrite) {
+//       analogWrite(pwmPin, 0);
+//     } else {
+//       digitalWrite(pwmPin, LOW);
+//     }
+
+//     Serial.println("Test completed.");
+//     Serial.print("Rotation count: ");
+//     Serial.println(rotationCount);
+
+//     testRunning = false;
+//   }
+// }
+// //------------------------------------------------------
+
+
+
+
+
+// //MOTOR Driver buttons torque test
+// //---------------------------------------
+// #include <Arduino.h>
+// #include <Wire.h>
+// #include <AS5600.h>
+
+// AS5600 sensor;
+
+// float prevAngle = 0.0;
+// int rotationCount = 0;
+// unsigned long startTime;
+// const unsigned long testDuration = 10 * 1000000UL; // 5 seconds in microseconds
+
+// void setup() {
+//   Serial.begin(115200);
+//   Wire.begin();
+//   sensor.begin();
+
+//   delay(10000); // Wait for sensor to stabilize
+//   prevAngle = sensor.readAngle() * AS5600_RAW_TO_DEGREES;
+
+//   Serial.println("Ready! Press the MD13S test buttons now...");
+//   startTime = micros();
+// }
+
+// void loop() {
+//   unsigned long now = micros();
+//   if (now - startTime >= testDuration) {
+//     Serial.println("Test finished!");
+//     Serial.print("Total rotations: ");
+//     Serial.println(rotationCount);
+//     while (true); // Halt here after test
+//   }
+
+//   float currentAngle = sensor.readAngle() * AS5600_RAW_TO_DEGREES;
+//   float angleDelta = currentAngle - prevAngle;
+
+//   // Wraparound detection
+//   if (angleDelta < -300) rotationCount++;
+//   else if (angleDelta > 300) rotationCount--;
+
+//   prevAngle = currentAngle;
+// }
+// //------------------------------------------------------
