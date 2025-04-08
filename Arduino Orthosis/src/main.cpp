@@ -39,8 +39,8 @@ int PWMValue = 0; //0-255 PWM value for speed, external PWM boards can go higher
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 90; //k_p = 0.5
-float integral = 1; //k_i = 3
+float proportional = 900; //k_p = 0.5
+float integral = 10000; //k_i = 3
 float derivative = 20; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
 
@@ -151,7 +151,7 @@ float rvar = r0;
 float Position = 0;
 
 // Targets
-float targetPosition = 0.03 ; //target position in [m]
+float targetPosition = 0.05 ; //target position in [m]
 float reverse_threshold = 0.0005; //Threshold for reversing motion in [m]
 bool goingForward = true;  // Direction flag
 
@@ -278,7 +278,7 @@ void DriveMotor()
 
         static unsigned long lastPrintTime = 0;
         unsigned long now = millis();
-        float print_Hz = 50;
+        float print_Hz = 10;
 
         if (now - lastPrintTime >= 1000/print_Hz) {  
             lastPrintTime = now;
@@ -291,7 +291,13 @@ void DriveMotor()
             Serial.print(",");
             Serial.print(Position,5);
             Serial.print(",");
-            Serial.println(targetPosition);
+            Serial.print(targetPosition);
+            Serial.print(",");
+            Serial.print(proportional*errorValue);
+            Serial.print(",");
+            Serial.print(errorIntegral);
+            Serial.print(",");
+            Serial.println(edot);
         }
 
       //  Stop after 10 seconds
