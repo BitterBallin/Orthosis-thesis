@@ -37,21 +37,7 @@ AS5600 sensor;
 
 int PWMValue = 0; //0-255 PWM value for speed, external PWM boards can go higher (e.g. PCA9685: 12-bit => 0-4095)
 
-// PID controller parameters 
-// need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 900; //k_p = 0.5
-float integral = 10000; //k_i = 3
-float derivative = 20; //k_d = 1
-float controlSignal = 0; //u - Also called as process variable (PV)
 
-//PID-related
-float previousTime = 0; //for calculating delta t
-float previousError = 0; //for calculating the derivative (edot)
-float errorIntegral = 0; //integral error
-float currentTime = 0; //time in the moment of calculation
-float deltaTime = 0; //time difference
-float errorValue = 0; //error
-float edot = 0; //derivative (de/dt)
 
 // Initiate time variable
 unsigned long startTime;
@@ -155,15 +141,38 @@ float targetPosition = 0.05 ; //target position in [m]
 float reverse_threshold = 0.0005; //Threshold for reversing motion in [m]
 bool goingForward = true;  // Direction flag
 
+// PID controller parameters 
+// need to be scaled from error to pwm value, from 0.1~ to 0 - 255
+float proportional = 3000; //k_p = 0.5
+float integral = 500; //k_i = 3
+float derivative = 1; //k_d = 1
+float controlSignal = 0; //u - Also called as process variable (PV)
+
+//PID-related
+float previousTime = 0; //for calculating delta t
+float previousError = 0; //for calculating the derivative (edot)
+float errorIntegral = 0; //integral error
+float currentTime = 0; //time in the moment of calculation
+float deltaTime = 0; //time difference
+float errorValue = 0; //error
+float edot = 0; //derivative (de/dt)
+float DeltaError = 0; //
+
 
 void calculate_PID() {
     float rotationCount_rad = rotationCount * 2 * PI; //convert the rotation count to radians
+    
+    //Determining the elapsed time
+    currentTime = micros(); //current time
+
 
     // Dynamic characteristics
     if (abs(rotationCount) < 1) {
         X = Lc;
         rvar = r0;
         Position = 0;
+        currentTime = 0;
+        previousTime = 0;
 
     } else {
         rvar = r0 * sqrt(Lc / X);
@@ -180,12 +189,12 @@ void calculate_PID() {
 
 }
 
-    //Determining the elapsed time
-    currentTime = micros(); //current time
+
     deltaTime = (currentTime - previousTime) / 1000000.0; //time difference in seconds
     previousTime = currentTime; //save the current time for the next iteration to get the time difference
     //---
     errorValue = - Position + targetPosition; //Current position - target position (or setpoint)
+    DeltaError = errorValue - previousError;  
 
     if (goingForward && abs(errorValue) < reverse_threshold) {
         goingForward = false;
@@ -193,6 +202,12 @@ void calculate_PID() {
         errorIntegral = 0;
         previousError = 0;
     } 
+
+    if(goingForward == false){
+        errorValue = Position - targetPosition; //Current position - target position (or setpoint)
+        DeltaError = abs(- errorValue + previousError);  
+
+    }
     // else if (!goingForward && abs(errorValue) < reverse_threshold) {
     //     goingForward = true;
     //     targetPosition = 0.03;  // or your max ROM
@@ -204,7 +219,8 @@ void calculate_PID() {
     //     errorValue = Position - targetPosition; //Reverse target to go back to beginning of ROM
     // }
 
-    edot = (errorValue - previousError) / deltaTime; //edot = de/dt - derivative term
+
+    edot = (DeltaError) / deltaTime; //edot = de/dt - derivative term
 
     errorIntegral = errorIntegral + (errorValue * deltaTime); //integral term - Newton-Leibniz, notice, this is a running sum!
 
@@ -248,12 +264,12 @@ void DriveMotor()
 
         //Determine speed and direction based on the value of the control signal
         //direction
-        if (controlSignal < 0) //negative value: CCW
+        if (goingForward==false) //negative value: CCW
         {
             motor.moveReverse(PWMValue);
             // Serial.print("Reversing motor");
         }
-        else if (controlSignal > 0) //positive: CW
+        else if (goingForward) //positive: CW
         {
             motor.moveForward(PWMValue);
             // Serial.print("Forward movement motor");
@@ -295,9 +311,9 @@ void DriveMotor()
             Serial.print(",");
             Serial.print(proportional*errorValue);
             Serial.print(",");
-            Serial.print(errorIntegral);
+            Serial.print(errorIntegral*integral);
             Serial.print(",");
-            Serial.println(edot);
+            Serial.println(edot*derivative);
         }
 
       //  Stop after 10 seconds

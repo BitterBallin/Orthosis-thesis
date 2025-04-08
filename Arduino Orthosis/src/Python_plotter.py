@@ -57,7 +57,7 @@ while True:
 
         timestamp = float(parts[0])  # already in seconds
         error = float(parts[1]) * 1000
-        control = float(parts[2]) / 100
+        control = float(parts[2]) / 10
         position = float(parts[3]) * 1000
         target = float(parts[4]) * 1000
         p = float(parts[5])
