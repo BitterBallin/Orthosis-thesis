@@ -143,8 +143,8 @@ bool goingForward = true;  // Direction flag
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 3000; //k_p = 0.5
-float integral = 500; //k_i = 3
+float proportional = 6000; //k_p = 0.5
+float integral = 2000; //k_i = 3
 float derivative = 1; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
 
@@ -164,15 +164,21 @@ void calculate_PID() {
     
     //Determining the elapsed time
     currentTime = micros(); //current time
-
+    static bool pidInitialized = false;
+    if (!pidInitialized) {
+        previousTime = currentTime;
+        errorIntegral = 0;
+        previousError = targetPosition;
+        pidInitialized = true;
+        return;  // Skip this first call, everything is now set up
+    }
 
     // Dynamic characteristics
     if (abs(rotationCount) < 1) {
         X = Lc;
         rvar = r0;
         Position = 0;
-        currentTime = 0;
-        previousTime = 0;
+
 
     } else {
         rvar = r0 * sqrt(Lc / X);
@@ -200,24 +206,10 @@ void calculate_PID() {
         goingForward = false;
         targetPosition = 0.0;
         errorIntegral = 0;
-        previousError = 0;
+        previousError = errorValue;
+
     } 
 
-    if(goingForward == false){
-        errorValue = Position - targetPosition; //Current position - target position (or setpoint)
-        DeltaError = abs(- errorValue + previousError);  
-
-    }
-    // else if (!goingForward && abs(errorValue) < reverse_threshold) {
-    //     goingForward = true;
-    //     targetPosition = 0.03;  // or your max ROM
-    //     errorIntegral = 0;
-    //     previousError = 0;
-    // }
-
-    // if (errorValue < reverse_threshold){
-    //     errorValue = Position - targetPosition; //Reverse target to go back to beginning of ROM
-    // }
 
 
     edot = (DeltaError) / deltaTime; //edot = de/dt - derivative term
@@ -257,10 +249,10 @@ void DriveMotor()
           PWMValue = 90;
         }
 
-        if (PWMValue < -90 && errorValue != 0)
-        {
-          PWMValue = -90;
-        }
+        // if (PWMValue < -90 && errorValue != 0)
+        // {
+        //   PWMValue = -90;
+        // }
 
         //Determine speed and direction based on the value of the control signal
         //direction
@@ -274,10 +266,10 @@ void DriveMotor()
             motor.moveForward(PWMValue);
             // Serial.print("Forward movement motor");
         }
-        else //0: STOP - this might be a bad practice when you overshoot the setpoint
-        {
-            motor.stop();
-        }
+        // else //0: STOP - this might be a bad practice when you overshoot the setpoint
+        // {
+        //     motor.stop();
+        // }
 
     }
 
@@ -309,11 +301,14 @@ void DriveMotor()
             Serial.print(",");
             Serial.print(targetPosition);
             Serial.print(",");
+            // Serial.print(deltaTime, 10);
+            // Serial.print(",");
             Serial.print(proportional*errorValue);
             Serial.print(",");
             Serial.print(errorIntegral*integral);
             Serial.print(",");
             Serial.println(edot*derivative);
+
         }
 
       //  Stop after 10 seconds
