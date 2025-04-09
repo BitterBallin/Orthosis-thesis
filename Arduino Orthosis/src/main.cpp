@@ -199,7 +199,7 @@ void calculate_PID() {
     deltaTime = (currentTime - previousTime) / 1000000.0; //time difference in seconds
     previousTime = currentTime; //save the current time for the next iteration to get the time difference
     //---
-    errorValue = - Position + targetPosition; //Current position - target position (or setpoint)
+    errorValue = -Position + targetPosition; //Current position - target position (or setpoint)
     DeltaError = errorValue - previousError;  
 
     if (goingForward && abs(errorValue) < reverse_threshold) {
@@ -213,6 +213,10 @@ void calculate_PID() {
 
 
     edot = (DeltaError) / deltaTime; //edot = de/dt - derivative term
+
+    if(goingForward==false){
+        edot = -edot;
+    }
 
     errorIntegral = errorIntegral + (errorValue * deltaTime); //integral term - Newton-Leibniz, notice, this is a running sum!
 
