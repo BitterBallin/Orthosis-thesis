@@ -89,6 +89,8 @@ while True:
         ax_pid.plot(time_vals, p_vals, label='P')
         ax_pid.plot(time_vals, i_vals, label='I')
         ax_pid.plot(time_vals, d_vals, label='D')
+        ax.axhline(25.5, color='black', linestyle=':', linewidth=1, label='Max PWM')
+        ax.axhline(-25.5, color='black', linestyle=':', linewidth=1)
         ax_pid.set_xlabel("Time (s)")
         ax_pid.set_ylabel("PID Contributions")
         ax_pid.legend()

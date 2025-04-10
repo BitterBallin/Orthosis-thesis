@@ -143,9 +143,9 @@ bool goingForward = true;  // Direction flag
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 6000; //k_p = 0.5
+float proportional = 8000; //k_p = 0.5
 float integral = 2000; //k_i = 3
-float derivative = 1; //k_d = 1
+float derivative = 0.8; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
 
 //PID-related
