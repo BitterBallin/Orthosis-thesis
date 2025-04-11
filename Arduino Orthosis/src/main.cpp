@@ -125,9 +125,9 @@ void get_angle()
 
 // Defining static wire characteristics
 float K = 300000; // [N/m] Stifness of wire
-float Fi = 0; // static load [N]
-float braid_factor = 1.1; //Increasing wire length based on braided wire structure to compensate real life length
-float L = 0.9*braid_factor; // original wire length in [m]
+float Fi = 10; // static load [N]
+float braid_factor = 1; //Increasing wire length based on braided wire structure to compensate real life length
+float L = 1.70*braid_factor; // original wire length in [m]
 float Lc = L  + Fi/K; // wire length in [m] with load
 float r0 = 0.28 * pow(10, -3);  // wire diameter in [m]
 
@@ -143,9 +143,9 @@ bool goingForward = true;  // Direction flag
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 8000; //k_p = 0.5
-float integral = 2000; //k_i = 3
-float derivative = 0.8; //k_d = 1
+float proportional = 255/targetPosition; //k_p = 0.5
+float integral = 1000; //k_i = 3
+float derivative = 0.5; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
 
 //PID-related
@@ -317,7 +317,7 @@ void DriveMotor()
 
       //  Stop after 10 seconds
        unsigned long elapsedTime = micros() - startTime;
-       if (elapsedTime >= 10000000UL) {
+       if (elapsedTime >= 20000000UL) {
            motor.stop();
            Serial.println("END");
            Serial.println("Stopped after 10 seconds.");
