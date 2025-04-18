@@ -163,19 +163,19 @@ motor_integrated_tf = motor_tf * integrator_tf
 
 plant_tf = motor_integrated_tf * Wire_tf
 
-ctl.rootlocus_pid_designer(plant_tf,
-                           gain='P',    # tune Kp (or 'I' or 'D')
-                           Kp0=24/targetPosition,     # your starting guess
-                           Ki0=0.0,
-                           Kd0=0.0,
-                           deltaK=0.01, # how big a step to try each time
-                           plot=True)
+# ctl.rootlocus_pid_designer(plant_tf,
+#                            gain='P',    # tune Kp (or 'I' or 'D')
+#                            Kp0=24/targetPosition,     # your starting guess
+#                            Ki0=0.0,
+#                            Kd0=0.0,
+#                            deltaK=0.01, # how big a step to try each time
+#                            plot=True)
 
 
 # PID controller transfer function
-Kp = 24/targetPosition
-Ki = 0
-Kd = 1
+Kp = 5000/targetPosition
+Ki = 1500
+Kd = 200000
 
 num_pid = [Kd, Kp, Ki]
 den_pid = [0, 1, 0]
@@ -200,13 +200,13 @@ print(f"Total TF {Total_tf}")
 
 
 # ----- Simulation Setup -----
-t_final = 300          # total simulation time in seconds
+t_final = 100          # total simulation time in seconds
 num_points = 10000     # time steps
 t = np.linspace(0, t_final, num_points)
 
 # Open loop chirp
 # V_max = 5  # desired max voltage
-input_chirp = (chirp(t, f0=0.001, f1=0.01, t1=t_final, method='linear') + 1)/2 * targetPosition
+input_chirp = (chirp(t, f0=0.01, f1=0.1, t1=t_final, method='linear') + 1)/2 * targetPosition
  
 
 # Generate a chirp signal that sweeps from 0.1 Hz to 10 Hz
