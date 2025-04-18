@@ -33,7 +33,8 @@ R = 11.1  # Resistance (Ohm)
 L = 0.5  # Inductance (H)
 V = 0  # Voltage (V) = PWMsignal/255*Vmax
 
-K = (14.7*10**-3)/0.53  # DMN37BB similar motor torque constant
+
+K = 24/(2*math.pi*3500/60)  # Back EMF constant calculated voltage to rad/sec ratio
 m = 0.18*0.4 # weight of entire motor and percentage of shaft
 r =  0.02
 J = 0.5*m*r**2
@@ -52,17 +53,13 @@ motor_tf = ctl.TransferFunction(num, den)
 print("Motor Transfer Function (Angular speed/Volt):")
 print(motor_tf)
 
-# PID controller transfer function
-Kp = 1
-Ki = 2
-Kd = 3
 
-num_pid = [Kd, Kp, Ki]
-den_pid = [0, 1, 0]
+#Defining target position early so it can be used for PID to PWM scaling
+targetPosition = 0.08 #80 mm displacement target for full ROM
 
-PID_tf = ctl.TransferFunction(num_pid, den_pid)
-print("PID controller Transfer Function:")
-print(PID_tf)
+
+
+
 
 
 #Transfer function of wire
@@ -80,7 +77,6 @@ rvar = r0          # initialize variable radius
 
 n = 1000 #simulation steps
 
-targetPosition = 0.08 #80 mm displacement target for full ROM
 max_rotations = 500 #max rotations of wire
 theta_vec = np.linspace(0, max_rotations*2*math.pi, n)
 DX_vec = []
@@ -100,30 +96,128 @@ for i, theta in enumerate(theta_vec):
         break
     
 
-print(DX_vec)
+# print(DX_vec)
 # print(theta_vec)
 
-Total_tf = motor_tf * PID_tf
+
+# --- polynomial fit ---
+deg = 2  # Polynomial degree
+coeffs = np.polyfit(theta_vec[0:len(DX_vec)], DX_vec, deg)
+
+# wrap it up into a “callable” poly
+DX_poly = np.poly1d(coeffs)
+
+# --- now you can compare or use DX_poly just like compute_DX ---
+DX_true = DX_vec
+DX_approx = DX_poly(theta_vec[0:len(DX_vec)])
+theta_plot = theta_vec[:len(DX_vec)]
+
+# quick printout to see max error
+err = np.max(np.abs(DX_true - DX_approx))
+print(f"Max abs error over test range: {err:.3e} m")
+print("Printing??")
+
+rmse = np.sqrt(np.mean((DX_true - DX_approx)**2))
+
+# --- Plotting ---
+plt.figure()
+plt.plot(theta_plot, DX_true, label='True DX')
+plt.plot(theta_plot, DX_approx, '--', label=f'Poly approx (RMSE={rmse*10**3:.3e} mm, Max abs Er = {err*10**3:.3e} mm)')
+plt.xlabel('Theta (rad)')
+plt.ylabel('Displacement DX (m)')
+plt.title('True vs Polynomial Approximation of Wire Displacement')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+print(DX_poly)
+
+# 1) grab the polynomial coefficients a0…an (highest→lowest power)
+a = DX_poly.coeffs
+n = DX_poly.order   # degree of the polynomial
+
+
+num_dx = [DX_poly.coeffs[2], DX_poly.coeffs[1], 2*DX_poly.coeffs[0]]
+den_dx = [1, 0, 0, 0]
+
+Wire_tf = ctl.TransferFunction(num_dx, den_dx)
+print(Wire_tf)
+
+# Build total Transfer function 
+#===============================================
+
+#Integrate motor function so that wire_tf get's angular position instead of speed
+# Define an integrator transfer function: 1/s
+integrator_tf = ctl.TransferFunction([1], [1, 0])
+
+# Transfer function of spring that is attached to the wire with 1500 n/m
+k = 1500
+spring_tf = ctl.TransferFunction([1], k)
+
+# Multiply the motor transfer function by 1/s (i.e. integrate)
+motor_integrated_tf = motor_tf * integrator_tf
+
+
+
+
+
+plant_tf = motor_integrated_tf * Wire_tf
+
+ctl.rootlocus_pid_designer(plant_tf,
+                           gain='P',    # tune Kp (or 'I' or 'D')
+                           Kp0=24/targetPosition,     # your starting guess
+                           Ki0=0.0,
+                           Kd0=0.0,
+                           deltaK=0.01, # how big a step to try each time
+                           plot=True)
+
+
+# PID controller transfer function
+Kp = 24/targetPosition
+Ki = 0
+Kd = 1
+
+num_pid = [Kd, Kp, Ki]
+den_pid = [0, 1, 0]
+
+PID_tf = ctl.TransferFunction(num_pid, den_pid)
+print("PID controller Transfer Function:")
+print(PID_tf)
+
+
+Total_tf = plant_tf*PID_tf
+
+print(f"Motor integrated TF {motor_integrated_tf}")
+print(f"PID TF {PID_tf}")
+print(f"Wire TF {Wire_tf}")
+print(f"Spring TF {spring_tf}")
+print(f"Plant TF {plant_tf}")
+
+closed_loop_tf = ctl.feedback(Total_tf)
+
+
+print(f"Total TF {Total_tf}")
+
 
 # ----- Simulation Setup -----
-t_final = 10          # total simulation time in seconds
-num_points = 1000     # time steps
+t_final = 300          # total simulation time in seconds
+num_points = 10000     # time steps
 t = np.linspace(0, t_final, num_points)
 
 # Open loop chirp
-V_max = 5  # desired max voltage
-input_chirp = (chirp(t, f0=0.1, f1=10, t1=t_final, method='linear') + 1)/2 * V_max
+# V_max = 5  # desired max voltage
+input_chirp = (chirp(t, f0=0.001, f1=0.01, t1=t_final, method='linear') + 1)/2 * targetPosition
  
 
 # Generate a chirp signal that sweeps from 0.1 Hz to 10 Hz
-input_chirp = chirp(t, f0=0.1, f1=10, t1=t_final, method='linear')
+open_loop_chirp = chirp(t, f0=0.1, f1=10, t1=t_final, method='linear')
 
 # ----- Forced Response for Motor and Total System -----
 # For motor_tf (open-loop response)
-t_motor, y_motor = ctl.forced_response(motor_tf, T=t, U=input_chirp)
+t_motor, y_motor = ctl.forced_response(motor_tf, T=t, U=open_loop_chirp)
 
-# For Total_tf (motor + PID controller) - closed-loop response
-t_total, y_total = ctl.forced_response(Total_tf, T=t, U=input_chirp)
+# For Total_tf (motor + PID controller+ wire) - closed-loop response
+t_total, y_total = ctl.forced_response(closed_loop_tf, T=t, U=input_chirp)
 
 # ----- Plotting the Chirp Signal and Responses in a 2x1 Grid -----
 fig, axs = plt.subplots(2, 1, figsize=(12, 8))
