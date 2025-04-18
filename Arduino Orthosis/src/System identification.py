@@ -6,6 +6,7 @@ import simpy as sm
 import numpy as np
 import control as ctl
 from scipy.signal import chirp  # To generate the chirp signal
+import math
 
 # sm.init_printing()
 
@@ -62,6 +63,45 @@ den_pid = [0, 1, 0]
 PID_tf = ctl.TransferFunction(num_pid, den_pid)
 print("PID controller Transfer Function:")
 print(PID_tf)
+
+
+#Transfer function of wire
+#========================================================
+# --- Static wire characteristics ---
+K = 300000          # [N/m] stiffness of wire
+Fi = 200.0              # [N] static load
+braid_factor = 1.0     # compensate for braid length
+L = 2.0 * braid_factor  # original wire length [m]
+Lc = L + Fi / K        # wire length under load [m]
+r0 = 0.28e-3           # wire radius [m]
+
+X_current = Lc     # initialize X to static length
+rvar = r0          # initialize variable radius
+
+n = 1000 #simulation steps
+
+targetPosition = 0.08 #80 mm displacement target for full ROM
+max_rotations = 500 #max rotations of wire
+theta_vec = np.linspace(0, max_rotations*2*math.pi, n)
+DX_vec = []
+
+for i, theta in enumerate(theta_vec):
+    #Compute amount of rotatios necessary for certain position
+    if i == 0:
+        X = Lc
+        rvar = r0
+        DX = 0
+        DX_vec.append(DX)
+    else:
+        rvar = r0*np.sqrt(Lc/X)
+        DX = Lc - np.sqrt(Lc**2 - (theta**2) * (rvar**2))
+        DX_vec.append(DX)
+    if DX > targetPosition:
+        break
+    
+
+print(DX_vec)
+# print(theta_vec)
 
 Total_tf = motor_tf * PID_tf
 
