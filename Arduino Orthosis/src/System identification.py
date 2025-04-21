@@ -28,15 +28,15 @@ import math
 #=== Motor Identification ===
 J = 0.0001  # Moment of inertia of the motor (kg*m^2)
 K = 0.01  # Motor constant (N*m/A)
-b = 0.1  # Damping coefficient (N*m*s/rad)
+b = 0.1*10**-4  # Damping coefficient (N*m*s/rad)
 R = 11.1  # Resistance (Ohm)
-L = 0.5  # Inductance (H)
+L = 0.5*10**-3  # Inductance (H)
 V = 0  # Voltage (V) = PWMsignal/255*Vmax
 
 
 K = 24/(2*math.pi*3500/60)  # Back EMF constant calculated voltage to rad/sec ratio
 m = 0.18*0.4 # weight of entire motor and percentage of shaft
-r =  0.02
+r =  0.015
 J = 0.5*m*r**2
 print("Calculated Rotor Inertia J =", J)
 
@@ -173,9 +173,9 @@ plant_tf = motor_integrated_tf * Wire_tf
 
 
 # PID controller transfer function
-Kp = 5000/targetPosition
-Ki = 1500
-Kd = 200000
+Kp = 24/targetPosition
+Ki = 0
+Kd = 150
 
 num_pid = [Kd, Kp, Ki]
 den_pid = [0, 1, 0]
@@ -185,10 +185,30 @@ print("PID controller Transfer Function:")
 print(PID_tf)
 
 
-Total_tf = plant_tf*PID_tf
+# PID OUTPUT RESPONSE 
+# PID output simulation: what voltage is sent to the motor?
+# Input to PID is the error = reference - output
+# Define PID using three proper transfer functions
+# tau_d = 0.5  # Small filter time constant for derivative
+
+# Proper PID transfer function
+# Define PI part (acting on error)
+P_tf = ctl.TransferFunction([Kp], [1])
+I_tf = ctl.TransferFunction([Ki], [1, 0])
+PI_tf = P_tf + I_tf
+
+# Define D part (acting on output only)
+tau_d = 0.01
+D_tf = ctl.TransferFunction([Kd, 0], [tau_d, 1])
+
+
+PID_tf_filter = P_tf + I_tf + D_tf
+
+# Total_tf = plant_tf*PID_tf
+Total_tf = plant_tf*PID_tf_filter
 
 print(f"Motor integrated TF {motor_integrated_tf}")
-print(f"PID TF {PID_tf}")
+print(f"PID TF {PID_tf_filter}")
 print(f"Wire TF {Wire_tf}")
 print(f"Spring TF {spring_tf}")
 print(f"Plant TF {plant_tf}")
@@ -200,13 +220,13 @@ print(f"Total TF {Total_tf}")
 
 
 # ----- Simulation Setup -----
-t_final = 100          # total simulation time in seconds
+t_final = 50          # total simulation time in seconds
 num_points = 10000     # time steps
 t = np.linspace(0, t_final, num_points)
 
 # Open loop chirp
 # V_max = 5  # desired max voltage
-input_chirp = (chirp(t, f0=0.01, f1=0.1, t1=t_final, method='linear') + 1)/2 * targetPosition
+input_chirp = (chirp(t, f0=0.1, f1=1, t1=t_final, method='linear') + 1)/2 * targetPosition
  
 
 # Generate a chirp signal that sweeps from 0.1 Hz to 10 Hz
@@ -219,15 +239,37 @@ t_motor, y_motor = ctl.forced_response(motor_tf, T=t, U=open_loop_chirp)
 # For Total_tf (motor + PID controller+ wire) - closed-loop response
 t_total, y_total = ctl.forced_response(closed_loop_tf, T=t, U=input_chirp)
 
+
+
+# Error signal
+error_signal = input_chirp - y_total
+
+# Simulate PI on error
+_, u_pi = ctl.forced_response(PI_tf, T=t, U=error_signal)
+
+# Simulate D on output
+_, u_d = ctl.forced_response(D_tf, T=t, U=y_total)
+
+# Final control signal
+u_pid = u_pi - u_d
+
 # ----- Plotting the Chirp Signal and Responses in a 2x1 Grid -----
 fig, axs = plt.subplots(2, 1, figsize=(12, 8))
 
-# Plot 1: Reference vs Motor Output (Open-Loop)
-axs[0].plot(t, input_chirp, label="Reference Chirp")
-axs[0].plot(t_motor, y_motor, '--', label="Motor Output (Open-Loop)")
-axs[0].set_title("Reference vs. Motor Output (Open-Loop)")
+# # Plot 1: Reference vs Motor Output (Open-Loop)
+# axs[0].plot(t, input_chirp, label="Reference Chirp")
+# axs[0].plot(t_motor, y_motor, '--', label="Motor Output (Open-Loop)")
+# axs[0].set_title("Reference vs. Motor Output (Open-Loop)")
+# axs[0].set_xlabel("Time [s]")
+# axs[0].set_ylabel("Signal")
+# axs[0].legend()
+# axs[0].grid(True)
+
+# Plot 1: PID Output Voltage
+axs[0].plot(t, u_pid, color='orange', label="PID Output Voltage")
+axs[0].set_title("PID Output Voltage over Time")
 axs[0].set_xlabel("Time [s]")
-axs[0].set_ylabel("Signal")
+axs[0].set_ylabel("Voltage [V]")
 axs[0].legend()
 axs[0].grid(True)
 
@@ -239,6 +281,9 @@ axs[1].set_xlabel("Time [s]")
 axs[1].set_ylabel("Signal")
 axs[1].legend()
 axs[1].grid(True)
+
+
+
 
 plt.tight_layout()
 plt.show()
