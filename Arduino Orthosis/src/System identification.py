@@ -174,8 +174,8 @@ plant_tf = motor_integrated_tf * Wire_tf
 
 # PID controller transfer function
 Kp = 24/targetPosition
-Ki = 0
-Kd = 150
+Ki = 1
+Kd = 800
 
 num_pid = [Kd, Kp, Ki]
 den_pid = [0, 1, 0]
@@ -226,7 +226,7 @@ t = np.linspace(0, t_final, num_points)
 
 # Open loop chirp
 # V_max = 5  # desired max voltage
-input_chirp = (chirp(t, f0=0.1, f1=1, t1=t_final, method='linear') + 1)/2 * targetPosition
+input_chirp = (chirp(t, f0=0.05, f1=0.5, t1=t_final, method='linear') + 1)/2 * targetPosition
  
 
 # Generate a chirp signal that sweeps from 0.1 Hz to 10 Hz
