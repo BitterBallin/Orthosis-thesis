@@ -93,7 +93,13 @@ void setup() {
     // Initialize the motor
     motor.begin();
 
+    t0 = millis();  // set t=0 for motion profile
+
+
 }
+
+
+
 
 
 float readForce() {
@@ -158,13 +164,23 @@ float rvar = r0;
 float Position = 0;
 
 // Targets
-float targetPosition = 0.05 ; //target position in [m]
-float reverse_threshold = 0.0005; //Threshold for reversing motion in [m]
-bool goingForward = true;  // Direction flag
+// float targetPosition = 0.05 ; //target position in [m]
+// float reverse_threshold = 0.0005; //Threshold for reversing motion in [m]
+// bool goingForward = true;  // Direction flag
+
+// Smoothing of target
+float target_max = 0.05;  // peak target (meters)
+unsigned long t0 = 0;     // start time (set in setup)
+float t_ramp = 2.0;       // ramp time in seconds
+float t_hold = 4.0;       // hold time in seconds
+float t_total = 2*t_ramp + t_hold;
+
+float smoothed_target = 0;
+
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 255/targetPosition; //k_p = 0.5
+float proportional = 255/target_max; //k_p = 0.5
 float integral = 1000; //k_i = 3
 float derivative = 0.5; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
@@ -179,6 +195,27 @@ float errorValue = 0; //error
 float edot = 0; //derivative (de/dt)
 float DeltaError = 0; //
 
+
+void updateSmoothedTarget() {
+    float t_now = (millis() - t0) / 1000.0;  // seconds since start
+
+    if (t_now < 0) {
+        smoothed_target = 0;
+    } else if (t_now < t_ramp) {
+        // Ramp up
+        smoothed_target = target_max * 0.5 * (1 - cos(PI * t_now / t_ramp));
+    } else if (t_now < t_ramp + t_hold) {
+        // Hold
+        smoothed_target = target_max;
+    } else if (t_now < t_total) {
+        // Ramp down
+        float t_down = t_now - (t_ramp + t_hold);
+        smoothed_target = target_max * 0.5 * (1 + cos(PI * t_down / t_ramp));
+    } else {
+        // Finished
+        smoothed_target = 0;
+    }
+}
 
 void calculate_PID() {
     float rotationCount_rad = rotationCount * 2 * PI; //convert the rotation count to radians
@@ -220,16 +257,23 @@ void calculate_PID() {
     deltaTime = (currentTime - previousTime) / 1000000.0; //time difference in seconds
     previousTime = currentTime; //save the current time for the next iteration to get the time difference
     //---
-    errorValue = -Position + targetPosition; //Current position - target position (or setpoint)
+
+    // Calling smoothed target function
+    updateSmoothedTarget();
+    errorValue = -Position + smoothed_target;
+    
+    //Current position - target position (or setpoint)
     DeltaError = errorValue - previousError;  
 
-    if (goingForward && abs(errorValue) < reverse_threshold) {
-        goingForward = false;
-        targetPosition = 0.0;
-        errorIntegral = 0;
-        previousError = errorValue;
 
-    } 
+    //Reversing logic of target, now obsolete due to target smoothing function
+    // if (goingForward && abs(errorValue) < reverse_threshold) {
+    //     goingForward = false;
+    //     targetPosition = 0.0;
+    //     errorIntegral = 0;
+    //     previousError = errorValue;
+
+    // } 
 
 
 
