@@ -5,6 +5,12 @@
 // #include "PID_controller/PID_controller.h"
 #include <AS5600.h>
 
+const int loadCellPin = A1;  // Analog pin for force
+float forceValue = 0.0;      // Processed force in Newtons (after scaling)
+float analogReadValue = 0.0;
+
+
+
 class MotorController {
   public:
       // Constructor: Initializes the motor pins
@@ -88,6 +94,21 @@ void setup() {
     motor.begin();
 
 }
+
+
+float readForce() {
+    int raw = analogRead(loadCellPin);  // 0–1023
+    float voltage = (raw / 1023.0) * 5.0;  // Convert to volts
+
+    // Example calibration: say 0.5 V = 0 N, and 3.5 V = 10 N
+    float zeroOffset = 0.5;
+    float voltsPerNewton = (3.5 - 0.5) / 10.0;
+
+    float force = (voltage - zeroOffset) / voltsPerNewton;
+    return force;
+}
+
+
 
 float prevAngle = 0.0;
 int rotationCount = 0;
@@ -288,6 +309,10 @@ void DriveMotor()
         // Driving motor
         DriveMotor();
 
+        // Readout force sensor
+        forceValue = readForce();
+
+
         static unsigned long lastPrintTime = 0;
         unsigned long now = millis();
         float print_Hz = 10;
@@ -296,22 +321,26 @@ void DriveMotor()
             lastPrintTime = now;
             unsigned long elapsedTime = micros() - startTime;
             Serial.print(elapsedTime / 1000000.0, 2); // in seconds with 2 decimal places
+            // Serial.print(",");
+            // Serial.print(errorValue,5);
             Serial.print(",");
-            Serial.print(errorValue,5);
-            Serial.print(",");
-            Serial.print(controlSignal);
+            Serial.println(forceValue, 5);  // Add to the existing serial data
+            // Serial.print(",");
+            // Serial.print(controlSignal);
             Serial.print(",");
             Serial.print(Position,5);
             Serial.print(",");
-            Serial.print(targetPosition);
-            Serial.print(",");
-            // Serial.print(deltaTime, 10);
+            Serial.println(rotationCount * 2 * PI, 5);
             // Serial.print(",");
-            Serial.print(proportional*errorValue);
-            Serial.print(",");
-            Serial.print(errorIntegral*integral);
-            Serial.print(",");
-            Serial.println(edot*derivative);
+            // Serial.print(targetPosition);
+            // Serial.print(",");
+            // // Serial.print(deltaTime, 10);
+            // // Serial.print(",");
+            // Serial.print(proportional*errorValue);
+            // Serial.print(",");
+            // Serial.print(errorIntegral*integral);
+            // Serial.print(",");
+            // Serial.println(edot*derivative);
 
         }
 
