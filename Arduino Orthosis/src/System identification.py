@@ -223,7 +223,7 @@ Total_tf = plant_tf*PID_tf_filter
 print(f"Motor integrated and approximated TF {motor_tf*integrator_tf}")
 print(f"Motor identified TF {motor_identified_tf}")
 # print(f"PID TF {PID_tf_filter}")
-# print(f"Wire TF {Wire_tf}")
+print(f"Wire TF {Wire_tf}")
 # print(f"Spring TF {spring_tf}")
 print(f"Plant TF {plant_tf}")
 
@@ -307,7 +307,7 @@ plt.show()
 omega_range = np.logspace(-1, 3, 500)  # rad/s
 
 # Get frequency responses using the frequency_response() function.
-mag_ol, phase_ol, omega_ol = ctl.frequency_response(motor_tf, omega_range)
+mag_ol, phase_ol, omega_ol = ctl.frequency_response(plant_tf, omega_range)
 mag_cl, phase_cl, omega_cl = ctl.frequency_response(Total_tf, omega_range)
 
 # Convert open-loop magnitude to decibels and phase to degrees.
