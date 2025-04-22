@@ -50,8 +50,8 @@ den = [J*L, (J*R + b*L), (b*R + K**2)]
 
 # Create the transfer function: Angular speed (rad/s) per volt.
 motor_tf = ctl.TransferFunction(num, den)
-print("Motor Transfer Function (Angular speed/Volt):")
-print(motor_tf)
+# print("Motor Transfer Function (Angular speed/Volt):")
+# print(motor_tf)
 
 
 #Defining target position early so it can be used for PID to PWM scaling
@@ -130,7 +130,7 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-print(DX_poly)
+# print(DX_poly)
 
 # 1) grab the polynomial coefficients a0…an (highest→lowest power)
 a = DX_poly.coeffs
@@ -141,7 +141,7 @@ num_dx = [DX_poly.coeffs[2], DX_poly.coeffs[1], 2*DX_poly.coeffs[0]]
 den_dx = [1, 0, 0, 0]
 
 Wire_tf = ctl.TransferFunction(num_dx, den_dx)
-print(Wire_tf)
+# print(Wire_tf)
 
 # Build total Transfer function 
 #===============================================
@@ -155,7 +155,7 @@ k = 1500
 spring_tf = ctl.TransferFunction([1], k)
 
 # Multiply the motor transfer function by 1/s (i.e. integrate)
-motor_integrated_tf = motor_tf * integrator_tf
+# motor_integrated_tf = motor_tf * integrator_tf
 
 
 # NEW MOTOR FUNCTION BASED ON SYSTEM IDENTIFICATION
@@ -163,13 +163,18 @@ motor_integrated_tf = motor_tf * integrator_tf
 # ----------------------------
 #             s^3
 
-# 2.499 s^2 + 310.5 s - 0.07359
-# -----------------------------
-#              s^3
+
+# === Transfer Function Derivation from 2nd order poly ===
+# a_motor = coeffs  # [a2, a1, a0]
+motor_id_num = [1.339, 309.5, -0.1703]
+motor_id_den = [1, 0, 0, 0]  # s^3 denominator
+
+motor_identified_tf = ctl.TransferFunction(motor_id_num , motor_id_den)
 
 
+# motor_integrated_tf = motor_identified_tf * integrator_tf
 
-plant_tf = motor_integrated_tf * Wire_tf
+plant_tf = motor_identified_tf * Wire_tf
 
 # ctl.rootlocus_pid_designer(plant_tf,
 #                            gain='P',    # tune Kp (or 'I' or 'D')
@@ -189,8 +194,8 @@ num_pid = [Kd, Kp, Ki]
 den_pid = [0, 1, 0]
 
 PID_tf = ctl.TransferFunction(num_pid, den_pid)
-print("PID controller Transfer Function:")
-print(PID_tf)
+# print("PID controller Transfer Function:")
+# print(PID_tf)
 
 
 # PID OUTPUT RESPONSE 
@@ -215,10 +220,11 @@ PID_tf_filter = P_tf + I_tf + D_tf
 # Total_tf = plant_tf*PID_tf
 Total_tf = plant_tf*PID_tf_filter
 
-print(f"Motor integrated TF {motor_integrated_tf}")
-print(f"PID TF {PID_tf_filter}")
-print(f"Wire TF {Wire_tf}")
-print(f"Spring TF {spring_tf}")
+print(f"Motor integrated and approximated TF {motor_tf*integrator_tf}")
+print(f"Motor identified TF {motor_identified_tf}")
+# print(f"PID TF {PID_tf_filter}")
+# print(f"Wire TF {Wire_tf}")
+# print(f"Spring TF {spring_tf}")
 print(f"Plant TF {plant_tf}")
 
 closed_loop_tf = ctl.feedback(Total_tf)
