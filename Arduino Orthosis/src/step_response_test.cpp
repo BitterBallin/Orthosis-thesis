@@ -28,15 +28,30 @@ class MotorController {
         int _speed;  // Current speed
     };
   
-  
-  // Create an instance of MotorController
-  MotorController motor(11, 12);  // PWM on pin 11, direction on pin 12
-  
+
+    // Declare these globally or at the top of your file
+bool step_applied = false;
+unsigned long stepStartTime = 0;
+float step_duration = 5.0;         // seconds
+float stepPWM = 255.0;             // PWM value (0–255)
+
+
+  // Call this function in setup() or before the test
+void startStepResponse() {
+    step_applied = false;
+    stepStartTime = micros();     // Time in microseconds
+}
+
+// Create an instance of MotorController
+MotorController motor(11, 12);  // PWM on pin 11, direction on pin 12
+const int pwmPin = 11;
+const int dirPin = 12;
   // MagneticAngleSensor sensor; // Create an instance of the class
 AS5600 sensor;
 
 int PWMValue = 0; //0-255 PWM value for speed, external PWM boards can go higher (e.g. PCA9685: 12-bit => 0-4095)
 
+unsigned long startTime = 0;
 
 void setup() {
 
@@ -79,8 +94,14 @@ void setup() {
 
     delay(1000);
 
+    pinMode(pwmPin, OUTPUT);
+    pinMode(dirPin, OUTPUT);
+    startStepResponse();
+
     // Initialize the motor
     motor.begin();
+    startStepResponse();  // Start timing when the test begins
+
 
 }
 
@@ -118,55 +139,64 @@ void get_angle()
 }
 
 
+
+// This gets called repeatedly in loop()
 void Step_response() {
     unsigned long currentTime = micros();
-    
-    // Apply step only once at the beginning
-    if (!step_applied && currentTime - startTime < step_duration) {
-        motor.moveForward(stepPWM);
-        step_applied = true;
-    }
+    float elapsedTime = (currentTime - stepStartTime) / 1000000.0; // Convert to seconds
 
-    // Stop motor after step_duration
-    if (currentTime - startTime >= step_duration) {
-        motor.stop();
+    if (elapsedTime < step_duration) {
+        motor.moveForward((int)stepPWM);  // Keep motor ON
+    } else {
+        motor.stop();  // Stop it after step duration
     }
 }
+
+
+// void Step_response() {
+//     unsigned long currentTime = micros();
+//     float elapsedTime = (currentTime - stepStartTime) / 1000000.0;
+
+//     if (elapsedTime < step_duration) {
+//         digitalWrite(dirPin, HIGH);        // Forward direction
+//         analogWrite(pwmPin, stepPWM);      // Constant PWM
+//     } else {
+//         analogWrite(pwmPin, 0);            // Stop motor
+//     }
+// }
+
 
 
 
 
 
 void loop() {
-    get_angle();  // Update rotationCount and prevAngle
+    get_angle();
+    Step_response();
 
-    Step_response();  // Apply step and stop after duration
-
-    // Print data at fixed rate (10 Hz here)
     static unsigned long lastPrintTime = 0;
     unsigned long now = millis();
-    float print_Hz = 500;  // Print rate (adjust as needed)
+    float print_Hz = 500;
 
     if (now - lastPrintTime >= 1000 / print_Hz) {
         lastPrintTime = now;
         unsigned long elapsedTime = micros() - startTime;
 
-        // Compute total angle (including rotation count) in degrees or radians
-        float absoluteAngle = rotationCount * 360.0 + prevAngle;  // degrees
-        float absoluteAngle_rad = absoluteAngle * DEG_TO_RAD;     // radians
+        float absoluteAngle = rotationCount * 360.0 + prevAngle;
+        float absoluteAngle_rad = absoluteAngle * DEG_TO_RAD;
 
-        // Print: time(s), angle(rad)
-        Serial.print(elapsedTime / 1000000.0, 6);  // time in seconds
+        Serial.print(elapsedTime / 1000000.0, 6);
         Serial.print(", ");
-        Serial.println(absoluteAngle_rad, 6);  // angle in radians
+        Serial.println(absoluteAngle_rad, 6);
     }
 
-    // Stop entire loop after test ends (for safety/logging)
-    unsigned long totalElapsed = micros() - startTime;
-    if (totalElapsed >= 2 * step_duration) {  // Add some buffer
+    // ❗ FIXED CONDITION:
+    unsigned long totalElapsed = micros() - stepStartTime;
+    if (totalElapsed >= (unsigned long)(2 * step_duration * 1e6)) {
         motor.stop();
         Serial.println("END");
-        while (true);  // Freeze loop
+        while (true);
     }
 }
+
 

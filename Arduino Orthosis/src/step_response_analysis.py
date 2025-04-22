@@ -1,102 +1,141 @@
 import serial
 import time
+import numpy as np
 import matplotlib.pyplot as plt
-from collections import deque
-
-# Close all open figures
-plt.close('all')
+import control as ctl
+from scipy.interpolate import interp1d
 
 # === USER SETTINGS ===
-port = 'COM12'
-baudrate = 115200
-max_lines = 2000
-skip_first = 5
-skip_last = 2
-buffer_size = 2000
+PORT = 'COM12'
+BAUDRATE = 115200
+MAX_LINES = 2000
+SKIP_FIRST = 5
+SKIP_LAST = 2
 
-# === Setup ===
-ser = serial.Serial(port, baudrate)
-ser.reset_input_buffer()  # Flush old junk from buffer
-import numpy as np
-from scipy.optimize import curve_fit
-import control as ctl
-
-# --- Data acquisition ---
-lines = []
+# === Serial Setup ===
+print("Connecting to serial...")
+ser = serial.Serial(PORT, BAUDRATE, timeout=2)
+ser.reset_input_buffer()
 print("Reading serial...")
 
-while len(lines) < max_lines:
-    if ser.in_waiting > 0:
+# === Read Data from Serial ===
+lines = []
+while len(lines) < MAX_LINES:
+    if ser.in_waiting:
         try:
             line = ser.readline().decode('utf-8').strip()
             if "END" in line:
                 break
             if "," in line:
                 lines.append(line)
+                if len(lines) % 100 == 0:
+                    print(f"Read {len(lines)} lines...")
         except UnicodeDecodeError:
-            continue  # skip garbage lines
+            continue  # skip garbage
 
 ser.close()
-print(f"Read {len(lines)} lines.")
+print(f"Total lines read: {len(lines)}")
 
-# --- Parse and clean data ---
+# === Parse Data ===
 data = []
 for line in lines:
     try:
-        t_str, angle_str = line.split(",")
-        data.append([float(t_str), float(angle_str)])
+        t_str, y_str = line.split(",")
+        t = float(t_str)
+        y = float(y_str)
+        data.append([t, y])
     except ValueError:
         continue
 
 data = np.array(data)
+
+# === Validate and Trim ===
+if data.shape[0] < 10:
+    raise RuntimeError("Not enough data received to perform analysis.")
+
 t = data[:, 0]
 y = data[:, 1]
 
-# Trim noisy start/stop if needed
-t = t[skip_first: -skip_last]
-y = y[skip_first: -skip_last]
-t -= t[0]  # Normalize time to 0
+if len(t) > SKIP_FIRST + SKIP_LAST:
+    t = t[SKIP_FIRST:-SKIP_LAST]
+    y = y[SKIP_FIRST:-SKIP_LAST]
 
-# --- Plot raw step response ---
+# Normalize time
+t -= t[0]
+
+# === Resample to uniform time vector ===
+t_uniform = np.linspace(t[0], t[-1], len(t))
+interp_func = interp1d(t, y, kind='linear')
+y_uniform = interp_func(t_uniform)
+
+# === Polynomial Fit ===
+deg = 2
+coeffs = np.polyfit(t_uniform, y_uniform, deg)
+y_poly = np.poly1d(coeffs)
+y_fit = y_poly(t_uniform)
+
+# === Error metrics ===
+err_max = np.max(np.abs(y_uniform - y_fit))
+rmse = np.sqrt(np.mean((y_uniform - y_fit) ** 2))
+print(f"Max abs error: {err_max:.4e}")
+print(f"RMSE:          {rmse:.4e}")
+
+# === Transfer Function Derivation from 2nd order poly ===
+a = coeffs  # [a2, a1, a0]
+num = [a[2], a[1], 2*a[0]]
+den = [1, 0, 0, 0]  # s^3 denominator
+
+step_tf = ctl.TransferFunction(num, den)
+print("\nDerived Transfer Function from Polynomial Fit:")
+print(step_tf)
+
+# === Plot ===
 plt.figure()
-plt.plot(t, y, label="Measured Step Response")
-plt.xlabel("Time [s]")
-plt.ylabel("Angle [rad]")
-plt.title("DC Motor Step Response")
+plt.plot(t_uniform, y_uniform, label='Measured (uniform)')
+plt.plot(t_uniform, y_fit, 'r--', label=f'Poly Fit (deg={deg})')
+plt.xlabel('Time [s]')
+plt.ylabel('Output')
+plt.title('Step Response and Polynomial Fit')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+
+# === Input vs Output Plot ===
+step_input = np.ones_like(t_uniform)  # Step of magnitude 1
+step_input *= y_uniform[-1]  # Scale to match final value of the output (gain)
+
+plt.figure()
+plt.plot(t_uniform, step_input, 'k--', label='Input (Step)')
+plt.plot(t_uniform, y_uniform, label='Output (Measured)')
+plt.plot(t_uniform, y_fit, 'r--', label=f'Poly Fit (deg={deg})')
+plt.xlabel('Time [s]')
+plt.ylabel('Signal')
+plt.title('Step Input vs System Output')
 plt.grid(True)
 plt.legend()
+plt.show()
 
-# --- Second-order system model ---
-def second_order_step_response(t, K, zeta, omega_n):
-    """Standard second-order step response (underdamped/overdamped supported)"""
-    sys = ctl.TransferFunction([K * omega_n**2], [1, 2*zeta*omega_n, omega_n**2])
-    t_out, y_out = ctl.step_response(sys, T=t)
-    return y_out
 
-# Initial guesses: [K (gain), zeta (damping), omega_n (natural freq)]
-initial_guess = [y[-1], 0.5, 5]
+# === Compute Angular Velocity ===
+dt = np.diff(t_uniform)
+dy = np.diff(y_uniform)
+omega = dy / dt  # rad/s
 
-# --- Fit model to data ---
-try:
-    popt, _ = curve_fit(second_order_step_response, t, y, p0=initial_guess)
-    K_fit, zeta_fit, omega_n_fit = popt
+# Make time vector for omega same length
+t_omega = t_uniform[1:]
 
-    # Create the fitted transfer function
-    num = [K_fit * omega_n_fit**2]
-    den = [1, 2 * zeta_fit * omega_n_fit, omega_n_fit**2]
-    tf_fit = ctl.TransferFunction(num, den)
+# Create matching step input vector for omega plot
+step_input_vel = np.ones_like(omega) * 3500*2*np.pi/60  # scaled to match output gain
 
-    print("\n=== Fitted Transfer Function Parameters ===")
-    print(f"Gain (K):      {K_fit:.4f}")
-    print(f"Damping (ζ):   {zeta_fit:.4f}")
-    print(f"ω_n (rad/s):   {omega_n_fit:.4f}")
-    print(f"Transfer Function:\n{tf_fit}\n")
-
-    # Plot fitted response
-    t_sim, y_sim = ctl.step_response(tf_fit, T=t)
-    plt.plot(t_sim, y_sim, '--', label="Fitted 2nd-Order Model")
-    plt.legend()
-    plt.show()
-
-except RuntimeError as e:
-    print("Curve fitting failed:", e)
+# === Plot Angular Velocity vs Input ===
+plt.figure()
+plt.plot(t_omega, omega, label='Angular Velocity (rad/s)')
+plt.plot(t_omega, step_input_vel, 'k--', label='Input (Step)')
+plt.xlabel('Time [s]')
+plt.ylabel('Angular Velocity [rad/s]')
+plt.title('Angular Velocity vs Step Input')
+plt.grid(True)
+plt.legend()
+plt.show()

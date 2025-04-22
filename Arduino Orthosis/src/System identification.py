@@ -158,6 +158,14 @@ spring_tf = ctl.TransferFunction([1], k)
 motor_integrated_tf = motor_tf * integrator_tf
 
 
+# NEW MOTOR FUNCTION BASED ON SYSTEM IDENTIFICATION
+# 1.339 s^2 + 309.5 s - 0.1703
+# ----------------------------
+#             s^3
+
+# 2.499 s^2 + 310.5 s - 0.07359
+# -----------------------------
+#              s^3
 
 
 
@@ -335,3 +343,4 @@ axs[1, 1].grid(True)
 
 plt.tight_layout()
 plt.show()
+
