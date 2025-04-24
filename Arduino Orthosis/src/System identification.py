@@ -104,10 +104,9 @@ for i, theta in enumerate(theta_vec):
 deg = 2  # Polynomial degree
 coeffs = np.polyfit(theta_vec[0:len(DX_vec)], DX_vec, deg)
 
-# wrap it up into a “callable” poly
 DX_poly = np.poly1d(coeffs)
 
-# --- now you can compare or use DX_poly just like compute_DX ---
+# Comparison of polynomial fit to original model
 DX_true = DX_vec
 DX_approx = DX_poly(theta_vec[0:len(DX_vec)])
 theta_plot = theta_vec[:len(DX_vec)]

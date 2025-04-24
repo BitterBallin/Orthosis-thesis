@@ -9,7 +9,7 @@ from scipy.interpolate import interp1d
 PORT = 'COM12'
 BAUDRATE = 115200
 MAX_LINES = 2000
-SKIP_FIRST = 5
+SKIP_FIRST = 0
 SKIP_LAST = 2
 
 # === Serial Setup ===
@@ -121,7 +121,9 @@ plt.show()
 # === Compute Angular Velocity ===
 dt = np.diff(t_uniform)
 dy = np.diff(y_uniform)
+dy_fit = np.diff(y_fit)
 omega = dy / dt  # rad/s
+omega_fit = dy_fit/dt # rad/s
 
 # Make time vector for omega same length
 t_omega = t_uniform[1:]
@@ -133,9 +135,23 @@ step_input_vel = np.ones_like(omega) * 3500*2*np.pi/60  # scaled to match output
 plt.figure()
 plt.plot(t_omega, omega, label='Angular Velocity (rad/s)')
 plt.plot(t_omega, step_input_vel, 'k--', label='Input (Step)')
+plt.plot(t_omega, omega_fit, 'r--', label = "Transfer function angular velocity")
 plt.xlabel('Time [s]')
 plt.ylabel('Angular Velocity [rad/s]')
 plt.title('Angular Velocity vs Step Input')
 plt.grid(True)
 plt.legend()
 plt.show()
+
+
+# === Save Angular Velocity Step Response to CSV ===
+import csv
+
+filename = 'step_response_velocity.csv'
+with open(filename, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Time [s]', 'Angular Velocity [rad/s]'])  # header
+    for ti, wi in zip(t_omega, omega):
+        writer.writerow([ti, wi])
+
+print(f"Angular velocity step response saved to: {filename}")
