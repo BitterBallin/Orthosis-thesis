@@ -5,7 +5,7 @@
 // #include "PID_controller/PID_controller.h"
 #include <AS5600.h>
 
-const int loadCellPin = A1;  // Analog pin for force
+const int loadCellPin = A0;  // Analog pin for force
 float forceValue = 0.0;      // Processed force in Newtons (after scaling)
 float analogReadValue = 0.0;
 
@@ -105,10 +105,10 @@ void setup() {
 float readForce() {
     int raw = analogRead(loadCellPin);  // 0–1023
     float voltage = (raw / 1023.0) * 5.0;  // Convert to volts
-
+    float restsignal = 275; // Signal to A0 at 0 excitation
     // Example calibration: say 0.5 V = 0 N, and 3.5 V = 10 N
-    float zeroOffset = 0.5;
-    float voltsPerNewton = (3.5 - 0.5) / 10.0;
+    float zeroOffset = (restsignal/1023)*5;
+    float voltsPerNewton = (5.0 - zeroOffset) / 200.0;
 
     float force = (voltage - zeroOffset) / voltsPerNewton;
     return force;
@@ -176,7 +176,7 @@ double Delta_ouput = 0;
 float target_max = 0.08;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
 float t_ramp = 2.0;       // ramp time in seconds
-float t_hold = 5.0;       // hold time in seconds
+float t_hold = 7.5;       // hold time in seconds
 float t_total = 2*t_ramp + t_hold;
 
 float smoothed_target = 0;
@@ -184,9 +184,9 @@ float smoothed_target = 0;
 
 // PID controller parameters 
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 2*255/target_max; //k_p = 0.5
-float integral = 0; //k_i = 3
-float derivative = 10000; //k_d = 1
+float proportional = 1.5*255/target_max; //k_p = 0.5
+float integral = 1000; //k_i = 3
+float derivative = 2500; //k_d = 1
 float controlSignal = 0; //u - Also called as process variable (PV)
 
 //PID-related
@@ -202,8 +202,10 @@ float DeltaError = 0; //
 //Filtering logic for derivative
 double filtered_edot = 0;
 double previous_filtered_edot = 0;
-double tau_d = 0.06;  // 20 ms time constant — tune this!
+double tau_d = 0.05;  // 20 ms time constant — tune this!
 
+//Filtering for complete control signal
+float filteredControlSignal = 0;
 
 
 void updateSmoothedTarget() {
@@ -304,14 +306,31 @@ void calculate_PID() {
     //     edot = -edot;
     // }
 
+    // Dump integral sum at target
+    if (abs(errorValue) < 0.00005) {
+        // errorIntegral *= 0.995;
+        errorIntegral =0;
+        edot = 0;
+        // edot = 0;
+    }
+
     errorIntegral = errorIntegral + (errorValue * deltaTime); //integral term - Newton-Leibniz, notice, this is a running sum!
 
     controlSignal = (proportional * errorValue) + (derivative * filtered_edot) + (integral * errorIntegral); //final sum, proportional term also calculated here
+
+    // // Control signal filtering for smoother control
+    // float alpha_c = 0.1;  // smoothing factor: 0.1 = heavy smoothing, 0.9 = minimal smoothing
+
+    // filteredControlSignal = alpha_c * controlSignal + (1 - alpha_c) * filteredControlSignal;
+
+    // controlSignal = filteredControlSignal;
+
 
     // controlSignal = 0;
     if (Position != PreviousPosition) {
         PreviousPosition = Position;
     }
+
 }
 
 void DriveMotor()
@@ -330,16 +349,17 @@ void DriveMotor()
         {
           PWMValue = 255; //capping the PWM signal - 8 bit
         }
+
       
         // if (PWMValue < -255) //fabs() = floating point absolute value
         // {
         //   PWMValue = -255; //capping the PWM signal - 8 bit
         // }
 
-        if (PWMValue < 90 && errorValue != 0)
-        {
-          PWMValue = 90;
-        }
+        // if (PWMValue < 90 && abs(errorValue) > 0.0001)
+        // {
+        //   PWMValue = 90;
+        // }
 
         // if (PWMValue < -90 && errorValue != 0)
         // {
@@ -392,8 +412,11 @@ void DriveMotor()
             Serial.print(elapsedTime / 1000000.0, 2); // in seconds with 2 decimal places
             Serial.print(",");
             Serial.print(errorValue,5);
-            // Serial.print(",");
-            // Serial.println(forceValue, 5);  // Add to the existing serial data
+            Serial.print(",");
+            // Serial.print("Force Value:");
+            // Serial.print("raw force A0:");
+
+            Serial.print(forceValue, 5);  // Add to the existing serial data
             Serial.print(",");
             Serial.print(controlSignal);
             Serial.print(",");
@@ -420,7 +443,7 @@ void DriveMotor()
             // Serial.print("\tPosition: "); Serial.print(Position, 10);
             // Serial.print("\tPreviousPosition: "); Serial.print(PreviousPosition, 10);
             // Serial.print("\tDelta_output: "); Serial.println(Delta_ouput, 6);
-
+            // Serial.print(raw);
 
             Serial.print(",");
             // Serial.print("Edot: ");

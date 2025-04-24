@@ -27,10 +27,13 @@ time_vals = deque(maxlen=buffer_size)
 p_vals = deque(maxlen=buffer_size)
 i_vals = deque(maxlen=buffer_size)
 d_vals = deque(maxlen=buffer_size)
+force_vals = deque(maxlen=buffer_size) 
+
 
 plt.ion()
 fig, ax = plt.subplots()
 fig_pid, ax_pid = plt.subplots()  # Separate plot for PID components
+fig_force, ax_force = plt.subplots()
 
 line_count = 0
 
@@ -52,21 +55,25 @@ while True:
     try:
         parts = line.strip().split(",")
 
-        if len(parts) != 8:
-            raise ValueError("Line does not have exactly 8 parts")
+        if len(parts) != 9:
+            raise ValueError(f"Line does not have exactly got {len(parts)}")
+        
 
-        timestamp = float(parts[0])  # already in seconds
+        timestamp = float(parts[0])            # already in seconds
         error = float(parts[1]) * 1000
-        control = float(parts[2]) / 10
-        position = float(parts[3]) * 1000
-        target = float(parts[4]) * 1000
-        p = float(parts[5])
-        i = float(parts[6])
-        d = float(parts[7])
+        force = float(parts[2])                # raw force value
+        control = float(parts[3]) / 10
+        position = float(parts[4]) * 1000
+        target = float(parts[5]) * 1000
+        p = float(parts[6])
+        i = float(parts[7])
+        d = float(parts[8])
+
 
         # Store values
         time_vals.append(timestamp)
         error_vals.append(error)
+        force_vals.append(force)              # NEW
         control_vals.append(control)
         position_vals.append(position)
         target_vals.append(target)
@@ -94,6 +101,14 @@ while True:
         ax_pid.set_xlabel("Time (s)")
         ax_pid.set_ylabel("PID Contributions")
         ax_pid.legend()
+
+        # === Force vs Position Plot ===
+        ax_force.clear()
+        ax_force.plot(position_vals, force_vals, 'b-')
+        ax_force.set_xlabel("Position [mm]")
+        ax_force.set_ylabel("Force [N]")  # Adjust unit label if needed
+        ax_force.set_title("Force vs Position")
+        ax_force.grid(True)
 
         plt.pause(0.001)
         line_count += 1
