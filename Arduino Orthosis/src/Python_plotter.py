@@ -145,3 +145,31 @@ else:
 plt.ioff()
 plt.show(block=True)
 ser.close()
+
+
+import csv
+import datetime
+# === Save to CSV ===
+test_number = 2
+
+# Get the current date and time
+current_datetime = datetime.datetime.now()
+current_date = current_datetime.date()
+csv_filename = f"TB1_test_{test_number}_{current_date}.csv"
+with open(csv_filename, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Time (s)", "Error (mm)", "Control", "Position (mm)", "Target (mm)", "P", "I", "D", "Force (N)"])
+    for i in range(len(time_vals)):
+        writer.writerow([
+            time_vals[i],
+            error_vals[i],
+            control_vals[i],
+            position_vals[i],
+            target_vals[i],
+            p_vals[i],
+            i_vals[i], 
+            d_vals[i],
+            force_vals[i]
+        ])
+
+print(f"Data saved to '{csv_filename}'")

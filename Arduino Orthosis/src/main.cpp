@@ -5,7 +5,7 @@
 // #include "PID_controller/PID_controller.h"
 #include <AS5600.h>
 
-const int loadCellPin = A0;  // Analog pin for force
+const int loadCellPin = A1;  // Analog pin for force
 float forceValue = 0.0;      // Processed force in Newtons (after scaling)
 float analogReadValue = 0.0;
 
@@ -104,14 +104,11 @@ void setup() {
 
 float readForce() {
     int raw = analogRead(loadCellPin);  // 0–1023
-    float voltage = (raw / 1023.0) * 5.0;  // Convert to volts
-    float restsignal = 275; // Signal to A0 at 0 excitation
-    // Example calibration: say 0.5 V = 0 N, and 3.5 V = 10 N
-    float zeroOffset = (restsignal/1023)*5;
-    float voltsPerNewton = (5.0 - zeroOffset) / 200.0;
+    
+    float restsignal = 300; // Signal to A0 at 0 excitation
+    float force = ((raw - restsignal)/(1023.0 - restsignal))*200;
 
-    float force = (voltage - zeroOffset) / voltsPerNewton;
-    return force;
+    return raw;
 }
 
 
@@ -154,7 +151,7 @@ void get_angle()
 float K = 300000; // [N/m] Stifness of wire
 float Fi = 10; // static load [N]
 float braid_factor = 1; //Increasing wire length based on braided wire structure to compensate real life length
-float L = 1.70*braid_factor; // original wire length in [m]
+float L = 1.7*braid_factor; // original wire length in [m]
 float Lc = L  + Fi/K; // wire length in [m] with load
 float r0 = 0.28 * pow(10, -3);  // wire diameter in [m]
 
@@ -414,7 +411,7 @@ void DriveMotor()
             Serial.print(errorValue,5);
             Serial.print(",");
             // Serial.print("Force Value:");
-            // Serial.print("raw force A0:");
+            Serial.print("raw force A0:");
 
             Serial.print(forceValue, 5);  // Add to the existing serial data
             Serial.print(",");
