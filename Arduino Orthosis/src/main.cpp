@@ -104,11 +104,9 @@ void setup() {
 
 float readForce() {
     int raw = analogRead(loadCellPin);  // 0–1023
-    
-    float restsignal = 300; // Signal to A0 at 0 excitation
-    float force = ((raw - restsignal)/(1023.0 - restsignal))*200;
-
-    return raw;
+    float ramp200 = 39.02;
+    float force = (raw/1023)*5*ramp200;
+    return force;
 }
 
 
