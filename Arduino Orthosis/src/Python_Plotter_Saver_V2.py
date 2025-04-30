@@ -13,7 +13,7 @@ max_lines = 10000
 skip_first = 5
 skip_last = 2
 buffer_size = 10000
-plot_every_n = 1  # Plot every Nth row from CSV
+plot_every_n = 5  # Plot every Nth row from CSV
 
 # === Initialize serial ===
 ser = serial.Serial(port, baudrate)

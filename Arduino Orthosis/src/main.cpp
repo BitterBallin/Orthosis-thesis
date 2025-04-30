@@ -54,7 +54,7 @@ void setup() {
     Serial.begin(250000);
     delay(3000); //Delay start of script so that python script can catch beginning.
     Wire.begin(); //start i2C
-    Wire.setClock(100000L); //faster clock speed
+    Wire.setClock(400000L); //faster clock speed
     while (!Serial); // Wait for Serial Monitor
     startTime = micros();  // Store start time in microseconds
     uint8_t as5600_addr = 0;
@@ -213,7 +213,7 @@ float DeltaError = 0; //
 //Filtering logic for derivative
 double filtered_edot = 0;
 double previous_filtered_edot = 0;
-double tau_d = 0.05;  // 20 ms time constant — tune this!
+double tau_d = 0.15;  // 20 ms time constant — tune this!
 
 //Filtering for complete control signal
 float filteredControlSignal = 0;
@@ -244,7 +244,7 @@ void calculate_PID() {
 
 
     // float rotationCount_rad = rotationCount * 2 * PI; //convert the rotation count to radians
-    float angle = sensor.readAngle() * AS5600_RAW_TO_RADIANS;  // use raw angle in radians
+    float angle = currentAngle * DEG_TO_RAD; // Instead of reading sensor again
     float rotationCount_rad = (rotationCount * 2 * PI) + angle;
     //Determining the elapsed time
     currentTime = micros(); //current time
@@ -427,7 +427,9 @@ void DriveMotor()
 
         static unsigned long lastPrintTime = 0;
         unsigned long now = millis();
-        float print_Hz = 10;
+
+
+        float print_Hz = 50;
 
         if (now - lastPrintTime >= 1000/print_Hz) {
             // updateSmoothedTarget();
