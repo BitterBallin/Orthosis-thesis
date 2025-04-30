@@ -9,10 +9,10 @@ plt.close('all')
 # === USER SETTINGS ===
 port = 'COM12'
 baudrate = 115200
-max_lines = 2000
+max_lines = 10000
 skip_first = 5
 skip_last = 2
-buffer_size = 2000
+buffer_size = 10000
 
 # === Setup ===
 ser = serial.Serial(port, baudrate)
@@ -36,6 +36,9 @@ fig_pid, ax_pid = plt.subplots()  # Separate plot for PID components
 fig_force, ax_force = plt.subplots()
 
 line_count = 0
+
+plot_every_n = 20  # Plot every Nth data point (adjust this value)
+
 
 while True:
     line = ser.readline().decode(errors='ignore').strip()
@@ -81,36 +84,53 @@ while True:
         i_vals.append(i)
         d_vals.append(d)
 
-        # Main plot
-        ax.clear()
-        ax.plot(time_vals, error_vals, label='Error')
-        ax.plot(time_vals, control_vals, label='Control')
-        ax.plot(time_vals, position_vals, label='Position')
-        ax.plot(time_vals, target_vals, label='Target')
-        ax.set_xlabel("Time (s)")
-        ax.set_ylabel("Distances in mm, control/100")
-        ax.legend()
 
-        # PID component plot
-        ax_pid.clear()
-        ax_pid.plot(time_vals, p_vals, label='P')
-        ax_pid.plot(time_vals, i_vals, label='I')
-        ax_pid.plot(time_vals, d_vals, label='D')
-        ax.axhline(25.5, color='black', linestyle=':', linewidth=1, label='Max PWM')
-        ax.axhline(-25.5, color='black', linestyle=':', linewidth=1)
-        ax_pid.set_xlabel("Time (s)")
-        ax_pid.set_ylabel("PID Contributions")
-        ax_pid.legend()
+        # Plotting every Nth point only
+        if line_count % plot_every_n == 0:
+            # === Downsample for plotting ===
+            skip = plot_every_n
+            times_ds = list(time_vals)[::skip]
+            error_ds = list(error_vals)[::skip]
+            control_ds = list(control_vals)[::skip]
+            position_ds = list(position_vals)[::skip]
+            target_ds = list(target_vals)[::skip]
+            p_ds = list(p_vals)[::skip]
+            i_ds = list(i_vals)[::skip]
+            d_ds = list(d_vals)[::skip]
+            force_ds = list(force_vals)[::skip]
 
-        # === Force vs Position Plot ===
-        ax_force.clear()
-        ax_force.plot(position_vals, force_vals, 'b-')
-        ax_force.set_xlabel("Position [mm]")
-        ax_force.set_ylabel("Force [N]")  # Adjust unit label if needed
-        ax_force.set_title("Force vs Position")
-        ax_force.grid(True)
+            # === Main Plot ===
+            ax.clear()
+            ax.plot(times_ds, error_ds, label='Error')
+            ax.plot(times_ds, control_ds, label='Control')
+            ax.plot(times_ds, position_ds, label='Position')
+            ax.plot(times_ds, target_ds, label='Target')
+            ax.set_xlabel("Time (s)")
+            ax.set_ylabel("Distances in mm, control/100")
+            ax.legend()
 
-        plt.pause(0.001)
+            # === PID Plot ===
+            ax_pid.clear()
+            ax_pid.plot(times_ds, p_ds, label='P')
+            ax_pid.plot(times_ds, i_ds, label='I')
+            ax_pid.plot(times_ds, d_ds, label='D')
+            ax_pid.axhline(25.5, color='black', linestyle=':', linewidth=1, label='Max PWM')
+            ax_pid.axhline(-25.5, color='black', linestyle=':', linewidth=1)
+            ax_pid.set_xlabel("Time (s)")
+            ax_pid.set_ylabel("PID Contributions")
+            ax_pid.legend()
+
+            # === Force vs Position Plot ===
+            ax_force.clear()
+            ax_force.plot(position_ds, force_ds, 'b-')
+            ax_force.set_xlabel("Position [mm]")
+            ax_force.set_ylabel("Force [N]")
+            ax_force.set_title("Force vs Position")
+            ax_force.grid(True)
+
+            plt.pause(0.001)
+
+        # Now always increment line count
         line_count += 1
 
     except ValueError as e:
@@ -150,7 +170,7 @@ ser.close()
 import csv
 import datetime
 # === Save to CSV ===
-test_number = 1
+test_number = 2
 
 # Get the current date and time
 current_datetime = datetime.datetime.now()

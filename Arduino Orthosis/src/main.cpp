@@ -52,7 +52,7 @@ unsigned long t0;
 void setup() {
 
     Serial.begin(115200);
-    delay(2000); //Delay start of script so that python script can catch beginning.
+    delay(3000); //Delay start of script so that python script can catch beginning.
     Wire.begin(); //start i2C
     Wire.setClock(400000L); //faster clock speed
     while (!Serial); // Wait for Serial Monitor
@@ -88,7 +88,7 @@ void setup() {
     Serial.print(", confaf=0x");
     Serial.println(control_reg_1, HEX);
 
-    delay(1000);
+    // delay(1000);
 
     // Initialize the motor
     motor.begin();
@@ -382,6 +382,10 @@ void DriveMotor()
 
     void loop() {
 
+        //Variable for timing loop
+        unsigned long loopStart = micros();
+
+        
         // Sensor readout
         get_angle();
     
@@ -395,6 +399,8 @@ void DriveMotor()
         // Readout force sensor
         forceValue = readForce();
 
+        
+        // unsigned long loopDuration = micros() - loopStart;
 
         static unsigned long lastPrintTime = 0;
         unsigned long now = millis();
@@ -404,7 +410,12 @@ void DriveMotor()
             // updateSmoothedTarget();
             lastPrintTime = now;
             unsigned long elapsedTime = micros() - startTime;
-            Serial.print(elapsedTime / 1000000.0, 2); // in seconds with 2 decimal places
+
+            // Serial.print("Loop time (µs): ");
+            // Serial.println(loopDuration);
+
+
+            Serial.print(elapsedTime / 1000000.0, 3); // in seconds with 2 decimal places
             Serial.print(",");
             Serial.print(errorValue,5);
             Serial.print(",");
@@ -413,20 +424,20 @@ void DriveMotor()
 
             Serial.print(forceValue, 5);  // Add to the existing serial data
             Serial.print(",");
-            Serial.print(controlSignal);
+            Serial.print(controlSignal, 3);
             Serial.print(",");
             Serial.print(Position,5);
             // Serial.print(",");
             // Serial.println(rotationCount * 2 * PI, 5);
             Serial.print(",");
-            Serial.print(smoothed_target);
+            Serial.print(smoothed_target, 3);
             Serial.print(",");
             // Serial.print("DeltaTime: ");
             // Serial.print(deltaTime, 10);
             // Serial.print(",");
-            Serial.print(proportional*errorValue);
+            Serial.print(proportional*errorValue, 3);
             Serial.print(",");
-            Serial.print(errorIntegral*integral);
+            Serial.print(errorIntegral*integral, 3);
 
             // float currentAngle = sensor.readAngle() * AS5600_RAW_TO_DEGREES;
 
@@ -442,7 +453,7 @@ void DriveMotor()
 
             Serial.print(",");
             // Serial.print("Edot: ");
-            Serial.println(filtered_edot*derivative, 10);
+            Serial.println(filtered_edot*derivative, 5);
 
         }
 
