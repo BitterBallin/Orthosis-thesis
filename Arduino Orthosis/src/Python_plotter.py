@@ -150,7 +150,7 @@ ser.close()
 import csv
 import datetime
 # === Save to CSV ===
-test_number = 2
+test_number = 1
 
 # Get the current date and time
 current_datetime = datetime.datetime.now()

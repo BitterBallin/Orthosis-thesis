@@ -103,7 +103,7 @@ void setup() {
 
 
 float readForce() {
-    int raw = analogRead(loadCellPin);  // 0–1023
+    float raw = analogRead(loadCellPin);  // 0–1023
     float ramp200 = 39.02;
     float force = (raw/1023)*5*ramp200;
     return force;
@@ -409,7 +409,7 @@ void DriveMotor()
             Serial.print(errorValue,5);
             Serial.print(",");
             // Serial.print("Force Value:");
-            Serial.print("raw force A0:");
+            // Serial.print("raw force A0:");
 
             Serial.print(forceValue, 5);  // Add to the existing serial data
             Serial.print(",");
