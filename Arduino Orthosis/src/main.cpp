@@ -244,8 +244,8 @@ void calculate_PID() {
 
 
     // float rotationCount_rad = rotationCount * 2 * PI; //convert the rotation count to radians
-    // float angle = sensor.readAngle() * AS5600_RAW_TO_RADIANS;  // use raw angle in radians
-    float rotationCount_rad = (rotationCount * 2 * PI) + currentAngle;
+    float angle = sensor.readAngle() * AS5600_RAW_TO_RADIANS;  // use raw angle in radians
+    float rotationCount_rad = (rotationCount * 2 * PI) + angle;
     //Determining the elapsed time
     currentTime = micros(); //current time
     static bool pidInitialized = false;
