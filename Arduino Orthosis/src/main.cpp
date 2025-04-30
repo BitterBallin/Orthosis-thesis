@@ -427,7 +427,8 @@ void DriveMotor()
 
         static unsigned long lastPrintTime = 0;
         unsigned long now = millis();
-
+        Serial.print("CurrentAngle:");
+        Serial.println(currentAngle);
 
         float print_Hz = 50;
 
