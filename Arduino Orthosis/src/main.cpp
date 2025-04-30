@@ -51,10 +51,10 @@ unsigned long t0;
 
 void setup() {
 
-    Serial.begin(115200);
+    Serial.begin(250000);
     delay(3000); //Delay start of script so that python script can catch beginning.
     Wire.begin(); //start i2C
-    Wire.setClock(400000L); //faster clock speed
+    Wire.setClock(100000L); //faster clock speed
     while (!Serial); // Wait for Serial Monitor
     startTime = micros();  // Store start time in microseconds
     uint8_t as5600_addr = 0;
@@ -113,17 +113,33 @@ float readForce() {
 
 float prevAngle = 0.0;
 int rotationCount = 0;
+float currentAngle = 0.0;  
 
 //Code to check how often get_angle gets called
 unsigned long last = 0;
 
 void get_angle()
 {
-    unsigned long now = micros();
-    // Serial.println(now - last);  // prints loop time in µs
-    last = now;
+    // unsigned long now = micros();
+    // // Serial.println(now - last);  // prints loop time in µs
+    // last = now;
     // 1. Read current angle from AS5600
-    float currentAngle = sensor.readAngle()* AS5600_RAW_TO_DEGREES;  // in degrees (0 to 360)
+
+
+    // static unsigned long lastReadTime = 0;
+    // static float currentAngle = 0;
+    // unsigned long now = micros();
+
+    // if (now - lastReadTime >= 1000) {  // read max every 1ms (1 kHz)
+
+    // }
+
+
+    currentAngle = sensor.readAngle() * AS5600_RAW_TO_DEGREES;
+    // lastReadTime = now;
+
+
+    // float currentAngle = sensor.readAngle()* AS5600_RAW_TO_DEGREES;  // in degrees (0 to 360)
 
     // 2. Calculate difference from previous angle
     float AngleDelta = currentAngle - prevAngle;
@@ -228,8 +244,8 @@ void calculate_PID() {
 
 
     // float rotationCount_rad = rotationCount * 2 * PI; //convert the rotation count to radians
-    float angle = sensor.readAngle() * AS5600_RAW_TO_RADIANS;  // use raw angle in radians
-    float rotationCount_rad = (rotationCount * 2 * PI) + angle;
+    // float angle = sensor.readAngle() * AS5600_RAW_TO_RADIANS;  // use raw angle in radians
+    float rotationCount_rad = (rotationCount * 2 * PI) + currentAngle;
     //Determining the elapsed time
     currentTime = micros(); //current time
     static bool pidInitialized = false;
@@ -389,8 +405,14 @@ void DriveMotor()
         // Sensor readout
         get_angle();
     
+        // float currentAngle = sensor.readAngle() * AS5600_RAW_TO_DEGREES;
+
+        // Serial.print("Raw Angle: ");
+        // Serial.print(currentAngle, 2);
+
         // PID controller
         updateSmoothedTarget();
+        
         calculate_PID();
     
         // Driving motor
@@ -399,8 +421,9 @@ void DriveMotor()
         // Readout force sensor
         forceValue = readForce();
 
+
         
-        // unsigned long loopDuration = micros() - loopStart;
+        unsigned long loopDuration = micros() - loopStart;
 
         static unsigned long lastPrintTime = 0;
         unsigned long now = millis();
@@ -411,8 +434,8 @@ void DriveMotor()
             lastPrintTime = now;
             unsigned long elapsedTime = micros() - startTime;
 
-            // Serial.print("Loop time (µs): ");
-            // Serial.println(loopDuration);
+            Serial.print("Loop time (µs): ");
+            Serial.println(loopDuration);
 
 
             Serial.print(elapsedTime / 1000000.0, 3); // in seconds with 2 decimal places
@@ -422,7 +445,7 @@ void DriveMotor()
             // Serial.print("Force Value:");
             // Serial.print("raw force A0:");
 
-            Serial.print(forceValue, 5);  // Add to the existing serial data
+            Serial.print(forceValue, 2);  // Add to the existing serial data
             Serial.print(",");
             Serial.print(controlSignal, 3);
             Serial.print(",");
@@ -439,10 +462,8 @@ void DriveMotor()
             Serial.print(",");
             Serial.print(errorIntegral*integral, 3);
 
-            // float currentAngle = sensor.readAngle() * AS5600_RAW_TO_DEGREES;
 
-            // Serial.print("Raw Angle: ");
-            // Serial.print(currentAngle, 2);
+
             // Serial.print("\tRotationCount: ");
             // Serial.println(rotationCount);
             // Serial.print("RotationCount: "); Serial.print(rotationCount);
