@@ -399,7 +399,7 @@ void DriveMotor()
     void loop() {
 
         //Variable for timing loop
-        unsigned long loopStart = micros();
+        // unsigned long loopStart = micros();
 
         
         // Sensor readout
@@ -423,22 +423,22 @@ void DriveMotor()
 
 
         
-        unsigned long loopDuration = micros() - loopStart;
+        // unsigned long loopDuration = micros() - loopStart;
 
-        static unsigned long lastPrintTime = 0;
-        unsigned long now = millis();
+        // static unsigned long lastPrintTime = 0;
+        // unsigned long now = millis();
         Serial.print("CurrentAngle:");
         Serial.println(currentAngle);
 
-        float print_Hz = 50;
+        // float print_Hz = 50;
 
-        if (now - lastPrintTime >= 1000/print_Hz) {
+        // if (now - lastPrintTime >= 1000/print_Hz) {
             // updateSmoothedTarget();
-            lastPrintTime = now;
+            // lastPrintTime = now;
             unsigned long elapsedTime = micros() - startTime;
 
-            Serial.print("Loop time (µs): ");
-            Serial.println(loopDuration);
+            // Serial.print("Loop time (µs): ");
+            // Serial.println(loopDuration);
 
 
             Serial.print(elapsedTime / 1000000.0, 3); // in seconds with 2 decimal places
@@ -479,10 +479,10 @@ void DriveMotor()
             // Serial.print("Edot: ");
             Serial.println(filtered_edot*derivative, 5);
 
-        }
+        // }
 
       //  Stop after 10 seconds
-       unsigned long elapsedTime = micros() - startTime;
+    //    unsigned long elapsedTime = micros() - startTime;
        if (elapsedTime >= 20000000UL) {
            motor.stop();
            Serial.println("END");
