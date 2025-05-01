@@ -9,7 +9,8 @@ const int loadCellPin = A1;  // Analog pin for force
 float forceValue = 0.0;      // Processed force in Newtons (after scaling)
 float analogReadValue = 0.0;
 
-
+//Testing Time
+unsigned long test_time = 180000000UL; //180 seconds of testing time
 
 class MotorController {
   public:
@@ -93,7 +94,8 @@ void setup() {
     // Initialize the motor
     motor.begin();
 
-    t0 = millis();  // set t=0 for motion profile
+    // t0 = millis();  // set t=0 for motion profile
+    t0 = micros();
 
 
 }
@@ -145,11 +147,11 @@ void get_angle()
     float AngleDelta = currentAngle - prevAngle;
 
     // Detect when sensor moves from ~360° back to ~0° (clockwise rotation)
-    if (AngleDelta < -300 ) {
+    if (AngleDelta < -200 ) {
         rotationCount++; // Increase rotation count
     }
     // Detect when sensor moves from ~0° back to ~360° (counterclockwise rotation)
-    else if (AngleDelta > 300) {
+    else if (AngleDelta > 200) {
         rotationCount--; // Decrease rotation count (if reversing)
     }
 
@@ -186,19 +188,27 @@ double Delta_ouput = 0;
 // Smoothing of target
 float target_max = 0.08;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
-float t_ramp = 2.0;       // ramp time in seconds
+float t_ramp = 5;       // ramp time in seconds
 float t_hold = 7.5;       // hold time in seconds
 float t_total = 2*t_ramp + t_hold;
 
 float smoothed_target = 0;
 
 
-// PID controller parameters 
+// PID controller parameters for ramp target
 // need to be scaled from error to pwm value, from 0.1~ to 0 - 255
-float proportional = 1.5*255/target_max; //k_p = 0.5
-float integral = 1000; //k_i = 3
-float derivative = 2500; //k_d = 1
+// float proportional = 1.5*255/target_max; //k_p = 0.5
+// float integral = 1500; //k_i = 3
+// float derivative = 2500; //k_d = 1
+// float controlSignal = 0; //u - Also called as process variable (PV)
+
+
+// PID controller parameters for chirp
+float proportional = 4.5*255/target_max; //k_p 
+float integral = 3500; //k_i 
+float derivative = 40; //k_d 
 float controlSignal = 0; //u - Also called as process variable (PV)
+
 
 //PID-related
 float previousTime = 0; //for calculating delta t
@@ -213,32 +223,57 @@ float DeltaError = 0; //
 //Filtering logic for derivative
 double filtered_edot = 0;
 double previous_filtered_edot = 0;
-double tau_d = 0.15;  // 20 ms time constant — tune this!
+double tau_d = 0.015;  // 20 ms time constant — tune this!
 
 //Filtering for complete control signal
 float filteredControlSignal = 0;
 
 
-void updateSmoothedTarget() {
-    float t_now = (millis() - t0) / 1000.0;  // seconds since start
+// void updateSmoothedTarget() {
+//     float t_now = (millis() - t0) / 1000.0;  // seconds since start
 
-    if (t_now < 0) {
+//     if (t_now < 0) {
+//         smoothed_target = 0;
+//     } else if (t_now < t_ramp) {
+//         // Ramp up
+//         smoothed_target = target_max * 0.5 * (1 - cos(PI * t_now / t_ramp));
+//     } else if (t_now < t_ramp + t_hold) {
+//         // Hold
+//         smoothed_target = target_max;
+//     } else if (t_now < t_total) {
+//         // Ramp down
+//         float t_down = t_now - (t_ramp + t_hold);
+//         smoothed_target = target_max * 0.5 * (1 + cos(PI * t_down / t_ramp));
+//     } else {
+//         // Finished
+//         smoothed_target = 0;
+//     }
+// }
+
+
+void updateSmoothedTarget() {
+    float t_now = (micros() - t0) / 1e6;         // Elapsed time in seconds
+    float T_chirp = test_time / 1e6;             // Chirp duration in seconds
+
+    float f0 = 0.01;     // Start frequency (Hz)
+    float f1 = 0.2;      // End frequency (Hz)
+    float A = target_max;
+
+    if (t_now < 0 || t_now > T_chirp) {
         smoothed_target = 0;
-    } else if (t_now < t_ramp) {
-        // Ramp up
-        smoothed_target = target_max * 0.5 * (1 - cos(PI * t_now / t_ramp));
-    } else if (t_now < t_ramp + t_hold) {
-        // Hold
-        smoothed_target = target_max;
-    } else if (t_now < t_total) {
-        // Ramp down
-        float t_down = t_now - (t_ramp + t_hold);
-        smoothed_target = target_max * 0.5 * (1 + cos(PI * t_down / t_ramp));
-    } else {
-        // Finished
-        smoothed_target = 0;
+        return;
     }
+
+    float k = (f1 - f0) / T_chirp;
+
+    // Adjust phase so that sin(phase) = -1 at t_now = 0 ⇒ target starts at 0
+    float phase = 2 * PI * (f0 * t_now + 0.5 * k * t_now * t_now) + 3 * PI / 2;
+
+    smoothed_target = 0.5 * A * (1 + sin(phase));  // Goes from 0 → A → 0
 }
+
+
+
 
 void calculate_PID() {
 
@@ -251,7 +286,7 @@ void calculate_PID() {
     static bool pidInitialized = false;
     if (!pidInitialized) {
         previousTime = currentTime;
-        errorIntegral = 0;
+        // errorIntegral = 0;
         pidInitialized = true;
         PreviousPosition = 0;
         return;  // Skip this first call, everything is now set up
@@ -286,11 +321,11 @@ void calculate_PID() {
     errorValue = -Position + smoothed_target;
 
     // Making the derivative based on the output instead of error to prevent spikes
-    Delta_ouput = Position - PreviousPosition;
+    // Delta_ouput = Position - PreviousPosition;
 
 
     //Current position - target position (or setpoint)
-    // DeltaError = errorValue - previousError;  
+    DeltaError = errorValue - previousError;  
 
 
     //Reversing logic of target, now obsolete due to target smoothing function
@@ -305,7 +340,12 @@ void calculate_PID() {
 
 
     // Calculate raw edot
-    edot = - Delta_ouput / deltaTime;
+    // edot = - Delta_ouput / deltaTime;
+
+    //Edot based on error instead of output
+    edot = -DeltaError/deltaTime;
+
+
 
     // Low-pass filter on edot
     double alpha = deltaTime / (tau_d + deltaTime);
@@ -318,14 +358,19 @@ void calculate_PID() {
     // }
 
     // Dump integral sum at target
-    if (abs(errorValue) < 0.00005) {
-        // errorIntegral *= 0.995;
-        errorIntegral =0;
-        edot = 0;
+    // if (abs(errorValue) < 0.00005) {
+    //     errorIntegral *= 0.995;
+        // errorIntegral =0;
         // edot = 0;
-    }
+        // edot = 0;
+    // }
 
-    errorIntegral = errorIntegral + (errorValue * deltaTime); //integral term - Newton-Leibniz, notice, this is a running sum!
+    //time based decay factor
+    float decay_factor = 0.995;  // closer to 1.0 = slow decay, < 0.99 = aggressive
+    errorIntegral = errorIntegral * decay_factor + errorValue * deltaTime;
+
+
+    // errorIntegral = errorIntegral + (errorValue * deltaTime); //integral term - Newton-Leibniz, notice, this is a running sum!
 
     controlSignal = (proportional * errorValue) + (derivative * filtered_edot) + (integral * errorIntegral); //final sum, proportional term also calculated here
 
@@ -335,7 +380,7 @@ void calculate_PID() {
     // filteredControlSignal = alpha_c * controlSignal + (1 - alpha_c) * filteredControlSignal;
 
     // controlSignal = filteredControlSignal;
-
+    previousError = errorValue;
 
     // controlSignal = 0;
     if (Position != PreviousPosition) {
@@ -427,8 +472,8 @@ void DriveMotor()
 
         // static unsigned long lastPrintTime = 0;
         // unsigned long now = millis();
-        Serial.print("CurrentAngle:");
-        Serial.println(currentAngle);
+        // Serial.print("CurrentAngle:");
+        // Serial.println(currentAngle);
 
         // float print_Hz = 50;
 
@@ -441,49 +486,26 @@ void DriveMotor()
             // Serial.println(loopDuration);
 
 
-            Serial.print(elapsedTime / 1000000.0, 3); // in seconds with 2 decimal places
-            Serial.print(",");
-            Serial.print(errorValue,5);
-            Serial.print(",");
-            // Serial.print("Force Value:");
-            // Serial.print("raw force A0:");
 
-            Serial.print(forceValue, 2);  // Add to the existing serial data
+            //Final output
+            Serial.print(elapsedTime / 1000000.0, 4); // Time in seconds
             Serial.print(",");
-            Serial.print(controlSignal, 3);
+            Serial.print(currentAngle, 5);           // Angle in radians
             Serial.print(",");
-            Serial.print(Position,5);
-            // Serial.print(",");
-            // Serial.println(rotationCount * 2 * PI, 5);
+            Serial.print(forceValue, 2);             // Force
             Serial.print(",");
-            Serial.print(smoothed_target, 3);
+            Serial.print(Position, 5);               // Position
             Serial.print(",");
-            // Serial.print("DeltaTime: ");
-            // Serial.print(deltaTime, 10);
-            // Serial.print(",");
-            Serial.print(proportional*errorValue, 3);
-            Serial.print(",");
-            Serial.print(errorIntegral*integral, 3);
+            Serial.println(smoothed_target, 5);      // Target
+            
 
-
-
-            // Serial.print("\tRotationCount: ");
-            // Serial.println(rotationCount);
-            // Serial.print("RotationCount: "); Serial.print(rotationCount);
-            // Serial.print("\tPosition: "); Serial.print(Position, 10);
-            // Serial.print("\tPreviousPosition: "); Serial.print(PreviousPosition, 10);
-            // Serial.print("\tDelta_output: "); Serial.println(Delta_ouput, 6);
-            // Serial.print(raw);
-
-            Serial.print(",");
-            // Serial.print("Edot: ");
-            Serial.println(filtered_edot*derivative, 5);
-
-        // }
 
       //  Stop after 10 seconds
     //    unsigned long elapsedTime = micros() - startTime;
-       if (elapsedTime >= 20000000UL) {
+
+
+
+       if (elapsedTime >= test_time) {
            motor.stop();
            Serial.println("END");
            Serial.println("Stopped after 10 seconds.");
