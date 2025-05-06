@@ -141,8 +141,13 @@ for i in range(1, len(time_vals)):
 
 # === Save to CSV ===
 test_number = 2
+voltage = 24
+wire_length = 140 # in cm
 current_date = datetime.datetime.now().date()
-csv_filename = f"TB1_test_{test_number}_{current_date}.csv"
+# csv_filename = f"TB1_test_{test_number}_{current_date}.csv"
+# csv_filename = f"TB1_CHIRPTEST_TEST{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
+csv_filename = f"TB1_RAMP_TEST_SPRING_ControlTest_{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
+
 
 with open(csv_filename, mode='w', newline='') as file:
     writer = csv.writer(file)

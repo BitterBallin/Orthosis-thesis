@@ -96,6 +96,18 @@ for i, theta in enumerate(theta_vec):
         break
     
 
+# Create save to CSV for the wire model above
+import csv
+
+# Save theta_vec and DX_vec to a CSV file
+with open('wire_model_data.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Theta (rad)', 'Displacement DX (m)'])
+    writer.writerows(zip(theta_vec[:len(DX_vec)], DX_vec))
+
+print("Wire model data saved to 'wire_model_data.csv'")
+
+
 # print(DX_vec)
 # print(theta_vec)
 
@@ -239,7 +251,7 @@ t = np.linspace(0, t_final, num_points)
 
 # Open loop chirp
 # V_max = 5  # desired max voltage
-input_chirp = (chirp(t, f0=0.05, f1=0.5, t1=t_final, method='linear') + 1)/2 * targetPosition
+input_chirp =( (chirp(t, f0=0.1, f1=1, t1=t_final, method='linear') + 1)/2 )* targetPosition
  
 
 # Generate a chirp signal that sweeps from 0.1 Hz to 10 Hz
