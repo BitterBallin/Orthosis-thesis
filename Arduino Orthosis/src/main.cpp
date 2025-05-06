@@ -10,7 +10,7 @@ float forceValue = 0.0;      // Processed force in Newtons (after scaling)
 float analogReadValue = 0.0;
 
 //Testing Time
-unsigned long test_time = 30000000UL; //30 seconds of testing time
+unsigned long test_time = 120000000UL; //120 seconds of testing time
 
 class MotorController {
   public:
@@ -167,9 +167,13 @@ void get_angle()
 float K = 300000; // [N/m] Stifness of wire
 float Fi = 10; // static load [N]
 float braid_factor = 1; //Increasing wire length based on braided wire structure to compensate real life length
-float L = 1.4*braid_factor; // original wire length in [m]
+float L = 1.30*braid_factor; // original wire length in [m]
 float Lc = L  + Fi/K; // wire length in [m] with load
-float r0 = 0.28 * pow(10, -3);  // wire diameter in [m]
+float r0 = 0.28 * pow(10, -3);  // wire radius in [m]
+
+//New radius based on measurement
+// float r0 = 0.375 * pow(10, -3);  // wire radius in [m]
+
 
 // init variables 
 double  X = Lc;
@@ -205,11 +209,12 @@ float smoothed_target = 0;
 
 // PID controller parameters for chirp
 float proportional = 4.5*255/target_max; //k_p 
-float integral = 3500; //k_i 
+// float integral = 3500; //k_i 
+float integral = 5000; //k_i 
 float derivative = 40; //k_d 
 float controlSignal = 0; //u - Also called as process variable (PV)
 
-
+    
 //PID-related
 float previousTime = 0; //for calculating delta t
 float previousError = 0; //for calculating the derivative (edot)
@@ -229,48 +234,48 @@ double tau_d = 0.015;  // 20 ms time constant — tune this!
 float filteredControlSignal = 0;
 
 
-void updateSmoothedTarget() {
-    float t_now = (micros() - t0) / 1e6;         // Elapsed time in seconds
-
-    if (t_now < 0) {
-        smoothed_target = 0;
-    } else if (t_now < t_ramp) {
-        // Ramp up
-        smoothed_target = target_max * 0.5 * (1 - cos(PI * t_now / t_ramp));
-    } else if (t_now < t_ramp + t_hold) {
-        // Hold
-        smoothed_target = target_max;
-    } else if (t_now < t_total) {
-        // Ramp down
-        float t_down = t_now - (t_ramp + t_hold);
-        smoothed_target = target_max * 0.5 * (1 + cos(PI * t_down / t_ramp));
-    } else {
-        // Finished
-        smoothed_target = 0;
-    }
-}
-
-
 // void updateSmoothedTarget() {
 //     float t_now = (micros() - t0) / 1e6;         // Elapsed time in seconds
-//     float T_chirp = test_time / 1e6;             // Chirp duration in seconds
 
-//     float f0 = 0.01;     // Start frequency (Hz)
-//     float f1 = 0.25;      // End frequency (Hz)
-//     float A = target_max;
-
-//     if (t_now < 0 || t_now > T_chirp) {
+//     if (t_now < 0) {
 //         smoothed_target = 0;
-//         return;
+//     } else if (t_now < t_ramp) {
+//         // Ramp up
+//         smoothed_target = target_max * 0.5 * (1 - cos(PI * t_now / t_ramp));
+//     } else if (t_now < t_ramp + t_hold) {
+//         // Hold
+//         smoothed_target = target_max;
+//     } else if (t_now < t_total) {
+//         // Ramp down
+//         float t_down = t_now - (t_ramp + t_hold);
+//         smoothed_target = target_max * 0.5 * (1 + cos(PI * t_down / t_ramp));
+//     } else {
+//         // Finished
+//         smoothed_target = 0;
 //     }
-
-//     float k = (f1 - f0) / T_chirp;
-
-//     // Adjust phase so that sin(phase) = -1 at t_now = 0 ⇒ target starts at 0
-//     float phase = 2 * PI * (f0 * t_now + 0.5 * k * t_now * t_now) + 3 * PI / 2;
-
-//     smoothed_target = 0.5 * A * (1 + sin(phase));  // Goes from 0 → A → 0
 // }
+
+
+void updateSmoothedTarget() {
+    float t_now = (micros() - t0) / 1e6;         // Elapsed time in seconds
+    float T_chirp = test_time / 1e6;             // Chirp duration in seconds
+
+    float f0 = 0.01;     // Start frequency (Hz)
+    float f1 = 0.25;      // End frequency (Hz)
+    float A = target_max;
+
+    if (t_now < 0 || t_now > T_chirp) {
+        smoothed_target = 0;
+        return;
+    }
+
+    float k = (f1 - f0) / T_chirp;
+
+    // Adjust phase so that sin(phase) = -1 at t_now = 0 ⇒ target starts at 0
+    float phase = 2 * PI * (f0 * t_now + 0.5 * k * t_now * t_now) + 3 * PI / 2;
+
+    smoothed_target = 0.5 * A * (1 + sin(phase));  // Goes from 0 → A → 0
+}
 
 
 
@@ -387,7 +392,11 @@ void calculate_PID() {
         PreviousPosition = Position;
     }
 
-    
+    // Adding safety measure to prevent overstretching of spring
+    if(Position > (target_max+(float(0.01)))){
+        controlSignal = 0;
+        motor.stop();
+    }
 }
 
 void DriveMotor()
