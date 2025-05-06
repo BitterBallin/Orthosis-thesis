@@ -210,7 +210,7 @@ float smoothed_target = 0;
 // PID controller parameters for chirp
 float proportional = 4.5*255/target_max; //k_p 
 // float integral = 3500; //k_i 
-float integral = 5000; //k_i 
+float integral = 4000; //k_i 
 float derivative = 40; //k_d 
 float controlSignal = 0; //u - Also called as process variable (PV)
 

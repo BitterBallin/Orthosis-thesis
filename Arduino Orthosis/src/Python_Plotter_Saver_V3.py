@@ -18,7 +18,7 @@ plot_every_n = 1  # Plot every Nth row from CSV
 # PID Gains (set these to your actual values)
 target_max = 0.08 #Peak target in meters
 proportional = 4.5*255/target_max
-integral = 5000
+integral = 4000
 derivative = 40
 tau_d = 0.015  # Filter time constant in seconds
 
@@ -141,12 +141,12 @@ for i in range(1, len(time_vals)):
 
 # === Save to CSV ===
 test_number = 1
-voltage = 24
+voltage = 30
 wire_length = 140 # in cm
 current_date = datetime.datetime.now().date()
 # csv_filename = f"TB1_test_{test_number}_{current_date}.csv"
 # csv_filename = f"TB1_CHIRPTEST_TEST{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
-csv_filename = f"TB1_CHIRP_TEST_SPRING2_{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
+csv_filename = f"TB1_CHIRP_SPRING2_TEST_{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
 
 
 with open(csv_filename, mode='w', newline='') as file:
