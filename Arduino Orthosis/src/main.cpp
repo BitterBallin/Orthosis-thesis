@@ -6,7 +6,7 @@
 #include <AS5600.h>
 
 const int loadCellPin = A1;  // Analog pin for force
-const int TiploadCellPin = A3; //Analog pin for fingertip force
+const int TiploadCellPin = A2; //Analog pin for fingertip force
 float forceValue = 0.0;      // Processed force in Newtons (after scaling)
 float TipForceValue = 0.0;
 float analogReadValue = 0.0;
@@ -515,6 +515,8 @@ void DriveMotor()
             Serial.print(currentAngle, 5);           // Angle in radians
             Serial.print(",");
             Serial.print(forceValue, 2);             // Force
+            Serial.print(",");
+            Serial.print(TipForceValue, 2);             // Fingertip Force
             Serial.print(",");
             Serial.print(Position, 5);               // Position
             Serial.print(",");
