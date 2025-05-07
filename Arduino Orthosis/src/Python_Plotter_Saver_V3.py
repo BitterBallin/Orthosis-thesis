@@ -88,7 +88,7 @@ control_vals = []
 rpm_vals = []
 
 error_integral = 0
-previous_position = force_vals[0]
+previous_position = tip_force_vals[0]
 previous_target = target_vals[0]
 previous_time = time_vals[0]
 previous_filtered_edot = 0
@@ -101,7 +101,7 @@ for i in range(1, len(time_vals)):
     if dt <= 0:
         continue
 
-    position = position_vals[i]
+    position = tip_force_vals[i]
     target = target_vals[i]
     error = -position + target
 
