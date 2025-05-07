@@ -140,7 +140,7 @@ for i in range(1, len(time_vals)):
     rpm_time.append(t)
 
 # === Save to CSV ===
-test_number = 2
+test_number = 4
 voltage = 24
 wire_length = 155 # in cm
 current_date = datetime.datetime.now().date()
