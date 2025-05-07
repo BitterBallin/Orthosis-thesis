@@ -6,7 +6,9 @@
 #include <AS5600.h>
 
 const int loadCellPin = A1;  // Analog pin for force
+const int TiploadCellPin = A3; //Analog pin for fingertip force
 float forceValue = 0.0;      // Processed force in Newtons (after scaling)
+float TipForceValue = 0.0;
 float analogReadValue = 0.0;
 
 //Testing Time
@@ -112,6 +114,14 @@ float readForce() {
 }
 
 
+float readTipForce() {
+    float raw = analogRead(TiploadCellPin);  // 0–1023
+    float ramp30 = 5.9069;
+    float force = (raw/1023)*5*ramp30;
+    return force;
+}
+
+
 
 float prevAngle = 0.0;
 int rotationCount = 0;
@@ -190,8 +200,10 @@ double Delta_ouput = 0;
 // bool goingForward = true;  // Direction flag
 
 // Smoothing of target
-float target_max = 0.045;  // peak target (meters)
+// float target_max = 0.045;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
+
+float target_max = 15;  // peak target (Newton)
 float t_ramp = 10;       // ramp time in seconds
 float t_hold = 7.5;       // hold time in seconds
 float t_total = 2*t_ramp + t_hold;
@@ -210,8 +222,8 @@ float smoothed_target = 0;
 // PID controller parameters for chirp
 float proportional = 4.5*255/target_max; //k_p 
 // float integral = 3500; //k_i 
-float integral = 4000; //k_i 
-float derivative = 40; //k_d 
+float integral = 20; //k_i 
+float derivative = 0.2; //k_d 
 float controlSignal = 0; //u - Also called as process variable (PV)
 
     
@@ -323,7 +335,7 @@ void calculate_PID() {
     // Calling smoothed target function
 
     // updateSmoothedTarget();
-    errorValue = -Position + smoothed_target;
+    errorValue = -TipForceValue + smoothed_target;
 
     // Making the derivative based on the output instead of error to prevent spikes
     // Delta_ouput = Position - PreviousPosition;
@@ -475,7 +487,7 @@ void DriveMotor()
 
         // Readout force sensor
         forceValue = readForce();
-
+        TipForceValue = readTipForce();
 
         
         // unsigned long loopDuration = micros() - loopStart;
