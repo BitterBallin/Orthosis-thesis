@@ -16,7 +16,7 @@ buffer_size = max_lines
 plot_every_n = 1
 
 # PID Gains
-target_max =15
+target_max =5
 proportional = 4.5 * 255 / target_max
 integral = 20
 derivative = 0.2
@@ -137,10 +137,15 @@ for i in range(1, len(time_vals)):
 # === Save to CSV ===
 test_number = 1
 voltage = 24
-wire_length = 0
+wire_length = 0 # in cm
+position_target = int(target_vals[len(target_vals) // 2])
 current_date = datetime.datetime.now().date()
-# csv_filename = f"TB2_RAMPTEST_FORCEMODE_TEST_{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
-csv_filename = f"TB2_EXTENSION_FORCEMODE_TEST_{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
+# csv_filename = f"TB1_test_{test_number}_{current_date}.csv"
+# csv_filename = f"TB1_CHIRPTEST_TEST{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
+csv_filename = f"TB2_FINAL_EXTENSIONFORCE_TARGET_{position_target}N_TEST_{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
+# csv_filename = f"TB2_SENSORDEBUGGING_RAMPTEST_ONESIDE_TARGET_{position_target}_TEST_{test_number}_{voltage}V_{wire_length}CM_{current_date}.csv"
+
+
 
 with open(csv_filename, mode='w', newline='') as file:
     writer = csv.writer(file)

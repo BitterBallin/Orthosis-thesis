@@ -203,7 +203,7 @@ double Delta_ouput = 0;
 // float target_max = 0.045;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
 
-float target_max = 15;  // peak target (Newton)
+float target_max = 5;  // peak target (Newton)
 float t_ramp = 10;       // ramp time in seconds
 float t_hold = 7.5;       // hold time in seconds
 float t_total = 2*t_ramp + t_hold;
@@ -405,10 +405,11 @@ void calculate_PID() {
     }
 
     // Adding safety measure to prevent overstretching of spring
-    if(Position > (target_max+(float(0.01)))){
+    if(Position > (target_max+(float(1)))){
         controlSignal = 0;
         motor.stop();
     }
+
 }
 
 void DriveMotor()
@@ -489,6 +490,13 @@ void DriveMotor()
         forceValue = readForce();
         TipForceValue = readTipForce();
 
+
+        if (forceValue > 70) {
+            motor.stop();
+            Serial.println("Force limit exceeded — motor stopped!");
+            while (true);  // Halt system or enter safe state
+        }
+
         
         // unsigned long loopDuration = micros() - loopStart;
 
@@ -516,6 +524,7 @@ void DriveMotor()
             Serial.print(",");
             Serial.print(forceValue, 2);             // Force
             Serial.print(",");
+            // Serial.print('Fingertip force:');
             Serial.print(TipForceValue, 2);             // Fingertip Force
             Serial.print(",");
             Serial.print(Position, 5);               // Position
