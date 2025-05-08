@@ -190,7 +190,7 @@ double Delta_ouput = 0;
 // bool goingForward = true;  // Direction flag
 
 // Smoothing of target
-float target_max = 0.08;  // peak target (meters)
+float target_max = 0.05;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
 float t_ramp = 10;       // ramp time in seconds
 float t_hold = 7.5;       // hold time in seconds
@@ -209,6 +209,7 @@ float smoothed_target = 0;
 
 // PID controller parameters for chirp
 float proportional = 4.5*255/target_max; //k_p 
+float proportionalforce = 0.5*255/80 ; 
 // float integral = 3500; //k_i 
 float integral = 4000; //k_i 
 float derivative = 40; //k_d 
@@ -374,6 +375,9 @@ void calculate_PID() {
     float decay_factor = 0.995;  // closer to 1.0 = slow decay, < 0.99 = aggressive
     errorIntegral = errorIntegral * decay_factor + errorValue * deltaTime;
 
+
+    //Force gain to compensate for increased resistance
+    // float forcegain = proportionalforce*forceValue;
 
     // errorIntegral = errorIntegral + (errorValue * deltaTime); //integral term - Newton-Leibniz, notice, this is a running sum!
 
