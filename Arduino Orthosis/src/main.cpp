@@ -147,11 +147,11 @@ void get_angle()
     float AngleDelta = currentAngle - prevAngle;
 
     // Detect when sensor moves from ~360° back to ~0° (clockwise rotation)
-    if (AngleDelta < -200 ) {
+    if (AngleDelta < -250 ) {
         rotationCount++; // Increase rotation count
     }
     // Detect when sensor moves from ~0° back to ~360° (counterclockwise rotation)
-    else if (AngleDelta > 200) {
+    else if (AngleDelta > 250) {
         rotationCount--; // Decrease rotation count (if reversing)
     }
 
@@ -190,7 +190,7 @@ double Delta_ouput = 0;
 // bool goingForward = true;  // Direction flag
 
 // Smoothing of target
-float target_max = 0.07;  // peak target (meters)
+float target_max = 0.08;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
 float t_ramp = 10;       // ramp time in seconds
 float t_hold = 7.5;       // hold time in seconds
