@@ -225,6 +225,7 @@ float proportional = 4.5*255/target_max; //k_p
 float integral = 20; //k_i 
 float derivative = 0.2; //k_d 
 float controlSignal = 0; //u - Also called as process variable (PV)
+float previouscontrolsignal = 0; // for controlling speed
 
     
 //PID-related
@@ -290,6 +291,10 @@ void updateSmoothedTarget() {
 // }
 
 
+float previousAngleForSpeed = 0.0;
+float filteredAngularSpeed = 0.0;
+const float tau_speed = 0.04; // 20 ms time constant
+const float maxAngularSpeed = 20.0; // rad/s
 
 
 void calculate_PID() {
@@ -331,33 +336,14 @@ void calculate_PID() {
 
     deltaTime = (currentTime - previousTime) / 1000000.0; //time difference in seconds
     previousTime = currentTime; //save the current time for the next iteration to get the time difference
-    //---
-    // Calling smoothed target function
-
+     
+    
     // updateSmoothedTarget();
     errorValue = -TipForceValue + smoothed_target;
-
-    // Making the derivative based on the output instead of error to prevent spikes
-    // Delta_ouput = Position - PreviousPosition;
 
 
     //Current position - target position (or setpoint)
     DeltaError = errorValue - previousError;  
-
-
-    //Reversing logic of target, now obsolete due to target smoothing function
-    // if (goingForward && abs(errorValue) < reverse_threshold) {
-    //     goingForward = false;
-    //     targetPosition = 0.0;
-    //     errorIntegral = 0;
-    //     previousError = errorValue;
-
-    // } 
-
-
-
-    // Calculate raw edot
-    // edot = - Delta_ouput / deltaTime;
 
     //Edot based on error instead of output
     edot = -DeltaError/deltaTime;
@@ -370,18 +356,6 @@ void calculate_PID() {
     previous_filtered_edot = filtered_edot;
 
 
-    // if(goingForward==false){
-    //     edot = -edot;
-    // }
-
-    // Dump integral sum at target
-    // if (abs(errorValue) < 0.00005) {
-    //     errorIntegral *= 0.995;
-        // errorIntegral =0;
-        // edot = 0;
-        // edot = 0;
-    // }
-
     //time based decay factor
     float decay_factor = 0.995;  // closer to 1.0 = slow decay, < 0.99 = aggressive
     errorIntegral = errorIntegral * decay_factor + errorValue * deltaTime;
@@ -391,13 +365,44 @@ void calculate_PID() {
 
     controlSignal = (proportional * errorValue) + (derivative * filtered_edot) + (integral * errorIntegral); //final sum, proportional term also calculated here
 
-    // // Control signal filtering for smoother control
-    // float alpha_c = 0.1;  // smoothing factor: 0.1 = heavy smoothing, 0.9 = minimal smoothing
 
-    // filteredControlSignal = alpha_c * controlSignal + (1 - alpha_c) * filteredControlSignal;
 
+
+    // Compute wrap-safe angle difference
+    float delta_deg = fmod((currentAngle - previousAngleForSpeed + 540.0), 360.0) - 180.0;
+    float angleDeltaRad = delta_deg * DEG_TO_RAD;
+    float rawAngularSpeed = angleDeltaRad / deltaTime;
+
+    // Low-pass filter
+    float angleAlpha = deltaTime / (tau_speed + deltaTime);
+    filteredAngularSpeed = angleAlpha * rawAngularSpeed + (1.0 - angleAlpha) * filteredAngularSpeed;
+
+    // Speed limit with hysteresis
+    float hysteresis = 2.0;  // avoid oscillation near threshold
+    if (fabs(filteredAngularSpeed) > maxAngularSpeed + hysteresis) {
+        float scale = maxAngularSpeed / fabs(filteredAngularSpeed);
+        controlSignal *= scale*0.2;
+
+        // Serial.print("Speed-limited! ω = ");
+        // Serial.print(filteredAngularSpeed);
+        // Serial.print(" rad/s, scaling controlSignal by ");
+        // Serial.println(scale);
+    }
+
+    previousAngleForSpeed = currentAngle; // update for next loop
+    // float deltaAngle = (currentAngle - lastAngleForSpeed) * DEG_TO_RAD;
+    // float angspeed = deltaAngle / deltaTime;
+    
+    // if (fabs(angspeed) > 50.0 ){
+    //     controlSignal = previouscontrolsignal - 100;
+    // }
+    // lastAngleForSpeed = currentAngle; // update for next loop
+    
+
+    
     // controlSignal = filteredControlSignal;
     previousError = errorValue;
+    previouscontrolsignal = controlSignal;
 
     // controlSignal = 0;
     if (Position != PreviousPosition) {
@@ -409,6 +414,8 @@ void calculate_PID() {
         controlSignal = 0;
         motor.stop();
     }
+
+
 
 }
 
@@ -491,11 +498,7 @@ void DriveMotor()
         TipForceValue = readTipForce();
 
 
-        if (forceValue > 70) {
-            motor.stop();
-            Serial.println("Force limit exceeded — motor stopped!");
-            while (true);  // Halt system or enter safe state
-        }
+
 
         
         // unsigned long loopDuration = micros() - loopStart;
@@ -534,9 +537,6 @@ void DriveMotor()
 
 
       //  Stop after 10 seconds
-    //    unsigned long elapsedTime = micros() - startTime;
-
-
 
        if (elapsedTime >= test_time) {
            motor.stop();
@@ -550,6 +550,13 @@ void DriveMotor()
        }
 
 
+       if (forceValue > 30) {
+        motor.stop();
+        Serial.println("Force limit exceeded — motor stopped!");
+        Serial.println("END");
+        while (true);  // Halt system or enter safe state
+
+    }
        
    }
     

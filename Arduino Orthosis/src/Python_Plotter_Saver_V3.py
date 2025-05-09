@@ -20,7 +20,7 @@ target_max =5
 proportional = 4.5 * 255 / target_max
 integral = 20
 derivative = 0.2
-tau_d = 0.015
+tau_d = 0.04
 
 # === Initialize serial ===
 ser = serial.Serial(port, baudrate)
@@ -93,6 +93,10 @@ previous_target = target_vals[0]
 previous_time = time_vals[0]
 previous_filtered_edot = 0
 previous_error = -previous_position + previous_target
+filtered_speed = 0.0
+tau_speed = 0.02  # time constant in seconds
+max_angular_speed = 20
+
 
 rpm_time = []
 for i in range(1, len(time_vals)):
@@ -116,6 +120,23 @@ for i in range(1, len(time_vals)):
     I = integral * error_integral
     D = derivative * filtered_edot
     control = P + I + D
+
+    # === Compute wrap-safe angular speed ===
+    delta_deg = (angle_vals[i] - angle_vals[i - 1] + 540) % 360 - 180
+    angle_delta_rad = np.deg2rad(delta_deg)
+    raw_angular_speed = angle_delta_rad / dt  # rad/s
+
+    # === Low-pass filter
+    angle_alpha = dt / (tau_speed + dt)
+    filtered_speed = angle_alpha * raw_angular_speed + (1 - angle_alpha) * filtered_speed
+
+    # === Speed limiting with hysteresis
+    hysteresis = 2.0  # rad/s tolerance
+    if abs(filtered_speed) > max_angular_speed + hysteresis:
+        scale = max_angular_speed / abs(filtered_speed)
+        control *= scale * 0.2
+        # print(f"[Speed-Limited] t={t:.3f}s | ω = {filtered_speed:.2f} rad/s | scale = {scale:.2f}")
+
 
     error_vals.append(error)
     p_vals.append(P)
@@ -182,24 +203,28 @@ p_vals = []
 i_vals = []
 d_vals = []
 rpm_vals = []
+angle_vals = []
 
 with open(csv_filename, mode='r') as file:
     reader = csv.reader(file)
-    next(reader)
+    next(reader)  # skip header
     for row in reader:
         try:
-            time_vals.append(float(row[0]))
-            force_vals.append(float(row[2]))
-            tip_force_vals.append(float(row[3]))
-            position_vals.append(float(row[4]))
-            target_vals.append(float(row[5]))
-            p_vals.append(float(row[7]))
-            i_vals.append(float(row[8]))
-            d_vals.append(float(row[9]))
-            control_vals.append(float(row[10]))
-            rpm_vals.append(float(row[11]))
+            time_vals.append(float(row[0]))          # Time
+            angle_vals.append(float(row[1]))         # Angle
+            force_vals.append(float(row[2]))         # Force
+            tip_force_vals.append(float(row[3]))     # Tip Force
+            position_vals.append(float(row[4]))      # Position
+            target_vals.append(float(row[5]))        # Target
+            error_vals.append(float(row[6]))         # Error
+            p_vals.append(float(row[7]))             # P
+            i_vals.append(float(row[8]))             # I
+            d_vals.append(float(row[9]))             # D
+            control_vals.append(float(row[10]))      # Control
+            rpm_vals.append(float(row[11]))          # RPM
         except ValueError:
             continue
+
 
 # Downsample
 time_vals = time_vals[::plot_every_n]
