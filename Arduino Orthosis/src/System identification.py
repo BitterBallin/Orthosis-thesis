@@ -68,7 +68,7 @@ targetPosition = 0.08 #80 mm displacement target for full ROM
 K = 300000          # [N/m] stiffness of wire
 Fi = 200.0              # [N] static load
 braid_factor = 1.0     # compensate for braid length
-L = 2.0 * braid_factor  # original wire length [m]
+L = 1.55 * braid_factor  # original wire length [m]
 Lc = L + Fi / K        # wire length under load [m]
 r0 = 0.28e-3           # wire radius [m]
 
