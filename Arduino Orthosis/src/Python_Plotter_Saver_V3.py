@@ -156,7 +156,7 @@ for i in range(1, len(time_vals)):
     rpm_time.append(t)
 
 # === Save to CSV ===
-test_number = 1
+test_number = 8
 voltage = 24
 wire_length = 155 # in cm
 position_target = int(target_vals[len(target_vals) // 2])
