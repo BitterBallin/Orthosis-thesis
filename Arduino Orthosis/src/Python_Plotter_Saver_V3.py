@@ -20,7 +20,7 @@ target_max =5
 proportional = 4.5 * 255 / target_max
 integral = 20
 derivative = 0.2
-tau_d = 0.04
+tau_d = 0.015
 
 # === Initialize serial ===
 ser = serial.Serial(port, baudrate)
@@ -158,7 +158,7 @@ for i in range(1, len(time_vals)):
 # === Save to CSV ===
 test_number = 1
 voltage = 24
-wire_length = 0 # in cm
+wire_length = 155 # in cm
 position_target = int(target_vals[len(target_vals) // 2])
 current_date = datetime.datetime.now().date()
 # csv_filename = f"TB1_test_{test_number}_{current_date}.csv"

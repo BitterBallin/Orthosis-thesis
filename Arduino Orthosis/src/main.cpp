@@ -12,7 +12,7 @@ float TipForceValue = 0.0;
 float analogReadValue = 0.0;
 
 //Testing Time
-unsigned long test_time = 35000000UL; //120 seconds of testing time
+unsigned long test_time = 60000000UL; //60 seconds of testing time
 
 class MotorController {
   public:
@@ -203,9 +203,9 @@ double Delta_ouput = 0;
 // float target_max = 0.045;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
 
-float target_max = 5;  // peak target (Newton)
+float target_max = 10;  // peak target (Newton)
 float t_ramp = 10;       // ramp time in seconds
-float t_hold = 7.5;       // hold time in seconds
+float t_hold = 40;       // hold time in seconds
 float t_total = 2*t_ramp + t_hold;
 
 float smoothed_target = 0;
@@ -550,7 +550,7 @@ void DriveMotor()
        }
 
 
-       if (forceValue > 30) {
+       if (forceValue > 100) {
         motor.stop();
         Serial.println("Force limit exceeded — motor stopped!");
         Serial.println("END");
