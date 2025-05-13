@@ -190,7 +190,7 @@ double Delta_ouput = 0;
 // bool goingForward = true;  // Direction flag
 
 // Smoothing of target
-float target_max = 0.05;  // peak target (meters)
+float target_max = 0.080;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
 float t_ramp = 10;       // ramp time in seconds
 float t_hold = 7.5;       // hold time in seconds
