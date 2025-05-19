@@ -4,12 +4,15 @@ import matplotlib.pyplot as plt
 from glob import glob
 
 # === Parameters ===
-csv_files = glob(r"src/Test Results TB2/One Sided Test Final/*.csv")
-plot_every_n = 5  # Downsampling factor
+csv_files = glob(r"src\Test results TB1\TB1_RAMP_TEST_SPRING1_SLOOP_24V_140CM_2025-05-06.csv")
+# csv_files = glob(r"src/Test Results TB1/Spring 2 24V CHIRP tests/*.csv")
+# csv_files = glob(r"src/Test Results TB2/Two Sided Test Final/*.csv")
+
+
+plot_every_n = 1  # Downsampling factor
 
 # === Initialize accumulators ===
 time_vals_reference = None
-force_vals_all = []
 position_vals_all = []
 target_vals_all = []
 p_vals_all = []
@@ -17,13 +20,13 @@ i_vals_all = []
 d_vals_all = []
 control_vals_all = []
 rpm_vals_all = []
+force_vals_all = []
 
 # === Read and store data from all files ===
 for csv_filename in csv_files:
     print(f"🔄 Reading: {csv_filename}")
 
     time_vals = []
-    force_vals = []
     position_vals = []
     target_vals = []
     p_vals = []
@@ -31,6 +34,7 @@ for csv_filename in csv_files:
     d_vals = []
     control_vals = []
     rpm_vals = []
+    force_vals = []
 
     with open(csv_filename, mode='r') as file:
         reader = csv.reader(file)
@@ -67,7 +71,7 @@ for csv_filename in csv_files:
     if time_vals_reference is None:
         time_vals_reference = time_vals
 
-    # Append all signals (always lists)
+    # Append all signals
     force_vals_all.append(force_vals)
     position_vals_all.append(position_vals)
     target_vals_all.append(target_vals)
@@ -77,13 +81,11 @@ for csv_filename in csv_files:
     control_vals_all.append(control_vals)
     rpm_vals_all.append(rpm_vals)
 
-
-    min_len = min(len(lst) for lst in position_vals_all)  # Or any list
+    min_len = min(len(lst) for lst in position_vals_all)
     time_vals_reference = time_vals_reference[:min_len]
 
 # === Average utility ===
 def average_lists(list_of_lists):
-    # All lists must have the same length
     lens = list(map(len, list_of_lists))
     if len(set(lens)) > 1:
         print(f"⚠️ Inconsistent lengths: {lens}")
@@ -96,7 +98,6 @@ def truncate_to_shortest(list_of_lists):
     min_len = min(len(lst) for lst in list_of_lists)
     return [lst[:min_len] for lst in list_of_lists]
 
-
 # === Compute averages ===
 force_vals = average_lists(truncate_to_shortest(force_vals_all))
 position_vals = average_lists(truncate_to_shortest(position_vals_all))
@@ -106,7 +107,6 @@ i_vals = average_lists(truncate_to_shortest(i_vals_all))
 d_vals = average_lists(truncate_to_shortest(d_vals_all))
 control_vals = average_lists(truncate_to_shortest(control_vals_all))
 rpm_vals = average_lists(truncate_to_shortest(rpm_vals_all))
-
 
 # === RMSE calculation ===
 squared_errors = [(p - t) ** 2 for p, t in zip(position_vals, target_vals)]
@@ -139,18 +139,18 @@ plt.title("P, I, D Terms Over Time")
 plt.legend()
 plt.grid(True)
 
-plt.figure("Force vs Time")
-plt.plot(time_vals_reference, force_vals, 'b-')
-plt.xlabel("Time (s)")
-plt.ylabel("Force (N)")
-plt.title("Force Over Time")
-plt.grid(True)
-
 plt.figure("RPM Over Time")
 plt.plot(time_vals_reference, rpm_vals, label='RPM', color='green')
 plt.xlabel("Time (s)")
 plt.ylabel("RPM")
 plt.title("RPM vs Time")
+plt.grid(True)
+
+plt.figure("Force Over Time")
+plt.plot(time_vals_reference, force_vals, label='Force (N)', color='red')
+plt.xlabel("Time (s)")
+plt.ylabel("Force (N)")
+plt.title("Force vs Time")
 plt.grid(True)
 
 plt.show()
