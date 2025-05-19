@@ -62,7 +62,7 @@ plt.plot(time_vals, [p * 1000 for p in position_vals], label='Position (mm)')
 plt.plot(time_vals, [t * 1000 for t in target_vals], label='Target (mm)', linestyle='--')
 plt.plot(time_vals, [c / 10 for c in control_vals], label='Control Signal (scaled)', linestyle='-.')
 
-plt.axhline(25.5, color='gray', linestyle='--', linewidth=1)
+plt.axhline(25.5, color='gray', linestyle='--', linewidth=1, label = 'Max PWM control signal [0-25]')
 plt.axhline(-25.5, color='gray', linestyle='--', linewidth=1)
 
 plt.xlabel("Time (s)")

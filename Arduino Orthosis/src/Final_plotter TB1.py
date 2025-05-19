@@ -4,8 +4,9 @@ import matplotlib.pyplot as plt
 from glob import glob
 
 # === Parameters ===
-csv_files = glob(r"src\Test results TB1\TB1_RAMP_TEST_SPRING1_SLOOP_24V_140CM_2025-05-06.csv")
+# csv_files = glob(r"src\Test results TB1\TB1_RAMP_TEST_SPRING1_SLOOP_24V_140CM_2025-05-06.csv")
 # csv_files = glob(r"src/Test Results TB1/Spring 2 24V CHIRP tests/*.csv")
+csv_files = glob(r"src/Test Results TB1/Spring 2 24V Ramp test/*.csv")
 # csv_files = glob(r"src/Test Results TB2/Two Sided Test Final/*.csv")
 
 
@@ -120,7 +121,7 @@ plt.plot(time_vals_reference, [p * 1000 for p in position_vals], label='Position
 plt.plot(time_vals_reference, [t * 1000 for t in target_vals], label='Target (mm)', linestyle='--')
 plt.plot(time_vals_reference, [c / 10 for c in control_vals], label='Control Signal (scaled)', linestyle='-.')
 
-plt.axhline(25.5, color='gray', linestyle='--', linewidth=1)
+plt.axhline(25.5, color='gray', linestyle='--', linewidth=1,  label = 'Max PWM control signal [0-25]')
 plt.axhline(-25.5, color='gray', linestyle='--', linewidth=1)
 
 plt.xlabel("Time (s)")
