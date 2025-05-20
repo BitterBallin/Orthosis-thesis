@@ -6,7 +6,12 @@ from glob import glob
 # === Parameters ===
 # csv_files = glob(r"src\Test results TB1\TB1_RAMP_TEST_SPRING1_SLOOP_24V_140CM_2025-05-06.csv")
 # csv_files = glob(r"src/Test Results TB1/Spring 2 24V CHIRP tests/*.csv")
-csv_files = glob(r"src/Test Results TB1/Spring 2 24V Ramp test/*.csv")
+# csv_files = glob(r"src/Test Results TB1/Spring 2 24V Ramp test/*.csv")
+# csv_files = glob(r"src/Test Results TB1/Spring 2 30 V Ramp test/*.csv")
+# csv_files = glob(r"src/Test Results TB1/TB1_Ramp_test_24V_80CM_1_2025-05-01.csv")
+# csv_files = glob(r"src/Test Results TB1/TB1_Ramp_test_30V1_170CM_2025-05-01.csv")
+csv_files = glob(r"src/Test Results TB1/TB1_CHIRPTEST_TEST1_30V_80CM_2025-05-01.csv")
+
 # csv_files = glob(r"src/Test Results TB2/Two Sided Test Final/*.csv")
 
 
