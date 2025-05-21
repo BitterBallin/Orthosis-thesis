@@ -7,8 +7,8 @@ from glob import glob
 
 # === Parameters ===
 csv_files = glob(r"src\Test Results TB2\Extension Fingertip Test Final\15N\*.csv")
-csv_files = glob(r"src\Test Results TB2\Half Flexion Fingertip Test Final\*.csv")
-csv_files = glob(r"src\Test Results TB2\Full Flexion Test Final\*.csv")
+# csv_files = glob(r"src\Test Results TB2\Half Flexion Fingertip Test Final\*.csv")
+# csv_files = glob(r"src\Test Results TB2\Full Flexion Test Final\*.csv")
 
 import os
 import glob
@@ -24,7 +24,7 @@ regression_degree = 3
 # === Define folders with labels and colors ===
 test_groups = [
     {
-        "label": "Extension",
+        "label": "Extended",
         "color": "red",
         "files": glob.glob(r"src\Test Results TB2\Extension Fingertip Test Final\15N\*.csv")
     },
@@ -35,7 +35,7 @@ test_groups = [
     },
     {
         "label": "Full Flexion",
-        "color": "yellow",
+        "color": "#FFB000",
         "files": glob.glob(r"src\Test Results TB2\Full Flexion Test Final\*.csv")
     }
 ]
@@ -94,13 +94,13 @@ for group in test_groups:
     force_sorted = np.array(all_force)[sorted_idx]
     pred_sorted = np.array(predicted)[sorted_idx]
 
-    plt.plot(all_force, all_tip_force, '.', color=group["color"], markersize=1, alpha=0.5, label=f"{group['label']} Data")
+    plt.plot(all_force, all_tip_force, ',', color=group["color"], markersize=1, alpha=0.5, label=f"{group['label']} Data")
     plt.plot(force_sorted, pred_sorted, '-', color=group["color"], label=f"{group['label']} Fit (R²={r_squared:.3f})")
 
 # === Final plot formatting ===
 plt.xlabel("Input Force (N)")
-plt.ylabel("Tip Force (N)")
-plt.title("Input Force vs Tip Force Across Hand Positions")
+plt.ylabel("Fingertip Force (N)")
+plt.title("Input force vs Fingertip force Across Hand Positions")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
@@ -169,17 +169,17 @@ for csv_filename in csv_files:
     rpm_vals = rpm_vals[::plot_every_n]
 
     # === Clip to first 35 seconds ===
-    clip_index = next((i for i, t in enumerate(time_vals) if t > 35), len(time_vals))
-    time_vals       = time_vals[:clip_index]
-    force_vals      = force_vals[:clip_index]
-    tip_force_vals  = tip_force_vals[:clip_index]
-    position_vals   = position_vals[:clip_index]
-    target_vals     = target_vals[:clip_index]
-    p_vals          = p_vals[:clip_index]
-    i_vals          = i_vals[:clip_index]
-    d_vals          = d_vals[:clip_index]
-    control_vals    = control_vals[:clip_index]
-    rpm_vals        = rpm_vals[:clip_index]
+    # clip_index = next((i for i, t in enumerate(time_vals) if t > 35), len(time_vals))
+    # time_vals       = time_vals[:clip_index]
+    # force_vals      = force_vals[:clip_index]
+    # tip_force_vals  = tip_force_vals[:clip_index]
+    # position_vals   = position_vals[:clip_index]
+    # target_vals     = target_vals[:clip_index]
+    # p_vals          = p_vals[:clip_index]
+    # i_vals          = i_vals[:clip_index]
+    # d_vals          = d_vals[:clip_index]
+    # control_vals    = control_vals[:clip_index]
+    # rpm_vals        = rpm_vals[:clip_index]
 
     # Set reference time on first file
     if time_vals_reference is None:
