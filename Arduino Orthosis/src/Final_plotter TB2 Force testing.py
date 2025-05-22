@@ -214,6 +214,23 @@ def average_lists(list_of_lists):
 def truncate_to_shortest(list_of_lists):
     min_len = min(len(lst) for lst in list_of_lists)
     return [lst[:min_len] for lst in list_of_lists]
+import numpy as np
+
+# Step 1: Compute RMSE per test
+rmse_list = []
+for tip_force_vals, target_vals in zip(tip_force_vals_all, target_vals_all):
+    min_len = min(len(tip_force_vals), len(target_vals))
+    tip_force_vals_trunc = tip_force_vals[:min_len]
+    target_vals_trunc = target_vals[:min_len]
+    
+    squared_errors = [(p - t) ** 2 for p, t in zip(tip_force_vals_trunc, target_vals_trunc)]
+    rmse = np.sqrt(np.mean(squared_errors))
+    rmse_list.append(rmse)
+
+# Step 2: Compute variance of the RMSEs
+rmse_variance = np.var(rmse_list)
+
+print("RMSE variance across tests:", rmse_variance)
 
 # === Compute averages ===
 force_vals = average_lists(truncate_to_shortest(force_vals_all))
