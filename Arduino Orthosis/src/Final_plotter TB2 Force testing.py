@@ -227,8 +227,16 @@ for tip_force_vals, target_vals in zip(tip_force_vals_all, target_vals_all):
     rmse = np.sqrt(np.mean(squared_errors))
     rmse_list.append(rmse)
 
-# Step 2: Compute variance of the RMSEs
+# Step 2: Compute mean and variance of RMSEs
+mean_rmse = np.mean(rmse_list)
 rmse_variance = np.var(rmse_list)
+
+# Step 3: Normalize the variance to the RMSE
+normalized_variance = rmse_variance / (mean_rmse ** 2)
+
+print("Mean RMSE:", mean_rmse)
+print("RMSE Variance:", rmse_variance)
+print("Normalized Variance:", normalized_variance)
 
 print("RMSE variance across tests:", rmse_variance)
 
