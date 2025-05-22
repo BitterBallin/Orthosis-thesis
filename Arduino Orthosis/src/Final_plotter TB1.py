@@ -5,12 +5,12 @@ from glob import glob
 
 # === Parameters ===
 # csv_files = glob(r"src\Test results TB1\TB1_RAMP_TEST_SPRING1_SLOOP_24V_140CM_2025-05-06.csv")
-# csv_files = glob(r"src/Test Results TB1/Spring 2 24V CHIRP tests/*.csv")
+csv_files = glob(r"src/Test Results TB1/Spring 2 24V CHIRP tests/*.csv")
 # csv_files = glob(r"src/Test Results TB1/Spring 2 24V Ramp test/*.csv")
 # csv_files = glob(r"src/Test Results TB1/Spring 2 30 V Ramp test/*.csv")
 # csv_files = glob(r"src/Test Results TB1/TB1_Ramp_test_24V_80CM_1_2025-05-01.csv")
 # csv_files = glob(r"src/Test Results TB1/TB1_Ramp_test_30V1_170CM_2025-05-01.csv")
-csv_files = glob(r"src/Test Results TB1/TB1_CHIRPTEST_TEST1_30V_80CM_2025-05-01.csv")
+# csv_files = glob(r"src/Test Results TB1/TB1_CHIRPTEST_TEST1_30V_80CM_2025-05-01.csv")
 
 # csv_files = glob(r"src/Test Results TB2/Two Sided Test Final/*.csv")
 
@@ -103,6 +103,30 @@ def average_lists(list_of_lists):
 def truncate_to_shortest(list_of_lists):
     min_len = min(len(lst) for lst in list_of_lists)
     return [lst[:min_len] for lst in list_of_lists]
+
+
+# Step 1: Compute RMSE per test
+rmse_list = []
+for tip_force_vals, target_vals in zip(position_vals_all, target_vals_all):
+    min_len = min(len(tip_force_vals), len(target_vals))
+    tip_force_vals_trunc = tip_force_vals[:min_len]
+    target_vals_trunc = target_vals[:min_len]
+    
+    squared_errors = [(p - t) ** 2 for p, t in zip(tip_force_vals_trunc, target_vals_trunc)]
+    rmse = np.sqrt(np.mean(squared_errors))
+    rmse_list.append(rmse)
+
+# Step 2: Compute mean and variance of RMSEs
+mean_rmse = np.mean(rmse_list)
+rmse_variance = np.var(rmse_list)
+
+# Step 3: Normalize the variance to the RMSE
+normalized_variance = rmse_variance / (mean_rmse ** 2)
+
+print("Mean RMSE:", mean_rmse)
+print("RMSE Variance:", rmse_variance)
+print("Normalized Variance:", normalized_variance)
+
 
 # === Compute averages ===
 force_vals = average_lists(truncate_to_shortest(force_vals_all))
