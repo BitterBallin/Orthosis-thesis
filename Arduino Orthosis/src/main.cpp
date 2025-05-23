@@ -203,7 +203,7 @@ double Delta_ouput = 0;
 // float target_max = 0.045;  // peak target (meters)
 // unsigned long t0 = 0;     // start time (set in setup)
 
-float target_max = 10;  // peak target (Newton)
+float target_max = 16;  // peak target (Newton)
 float t_ramp = 10;       // ramp time in seconds
 float t_hold = 40;       // hold time in seconds
 float t_total = 2*t_ramp + t_hold;
