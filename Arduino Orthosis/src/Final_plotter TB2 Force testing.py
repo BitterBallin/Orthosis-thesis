@@ -4,11 +4,11 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 from glob import glob
-
 # === Parameters ===
-csv_files = glob(r"src\Test Results TB2\Extension Fingertip Test Final\15N\*.csv")
+# csv_files = glob(r"src\Test Results TB2 V2\Extended force testing\*.csv")
 # csv_files = glob(r"src\Test Results TB2\Half Flexion Fingertip Test Final\*.csv")
 # csv_files = glob(r"src\Test Results TB2\Full Flexion Test Final\*.csv")
+csv_files = glob(r"TB2_FINAL_ND_HALFFLEXION_TARGET_16N_TEST_1_30V_155CM_2025-05-23.csv")
 
 import os
 import glob
