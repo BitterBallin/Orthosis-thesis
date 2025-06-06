@@ -1,5 +1,5 @@
 {
     "port": "COM12",
     "board": "arduino:avr:micro",
-    "sketch": "src\\PID_controller\\Magnetic_angle_sensor_test.ino"
+    "sketch": "src\\main.cpp"
 }

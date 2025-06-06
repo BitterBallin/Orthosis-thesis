@@ -550,7 +550,7 @@ void DriveMotor()
        }
 
 
-       if (forceValue > 155) {
+       if (forceValue > 170) {
         motor.stop();
         Serial.println("Force limit exceeded — motor stopped!");
         Serial.println("END");
