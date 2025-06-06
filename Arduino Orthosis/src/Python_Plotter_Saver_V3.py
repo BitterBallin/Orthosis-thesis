@@ -145,7 +145,7 @@ for i in range(1, len(time_vals)):
 #=============================================
 #=============================================
 
-test_number = 8
+test_number = 10
 voltage = 24
 wire_length = 155 # in cm
 position_target = int(target_vals[len(target_vals) // 2]*1000)
