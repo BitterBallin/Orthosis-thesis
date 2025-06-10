@@ -8,6 +8,7 @@ from glob import glob
 # csv_files = glob(r"src/Test Results TB2/Two Sided Test Final/*.csv")
 # csv_files = glob(r"src/Test Results TB2/One Sided Test New Design Final/*.csv")
 csv_files = glob(r"src/Test Results TB2/One Sided Test New Design Final/TB2_NEWDESIGN_RAMPTEST_ONESIDED_TARGET_80mm_TEST_4_24V_155CM_2025-05-13.csv")
+csv_files = glob(r"src/Test Results TB2 V2/One sided Test New Design Final V2/*.csv")
 
 
 plot_every_n = 1  # Downsampling factor
