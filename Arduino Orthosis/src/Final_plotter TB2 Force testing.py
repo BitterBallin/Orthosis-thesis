@@ -22,21 +22,41 @@ clip_time_seconds = 35
 regression_degree = 3
 
 # === Define folders with labels and colors ===
+# test_groups = [
+#     {
+#         "label": "Extended",
+#         "color": "red",
+#         "files": glob.glob(r"src\Test Results TB2\Extension Fingertip Test Final\15N\*.csv")
+#     },
+#     {
+#         "label": "Half Flexion",
+#         "color": "blue",
+#         "files": glob.glob(r"src\Test Results TB2\Half Flexion Fingertip Test Final\*.csv")
+#     },
+#     {
+#         "label": "Full Flexion",
+#         "color": "#FFB000",
+#         "files": glob.glob(r"src\Test Results TB2\Full Flexion Test Final\*.csv")
+#     }
+# ]
+
+
+# === Define folders with labels and colors ===
 test_groups = [
     {
         "label": "Extended",
         "color": "red",
-        "files": glob.glob(r"src\Test Results TB2\Extension Fingertip Test Final\15N\*.csv")
+        "files": glob.glob(r"src\Test Results TB2 V2\Extended force testing\*.csv")
     },
     {
         "label": "Half Flexion",
         "color": "blue",
-        "files": glob.glob(r"src\Test Results TB2\Half Flexion Fingertip Test Final\*.csv")
+        "files": glob.glob(r"src\Test Results TB2 V2\Half Flexion force testing\*.csv")
     },
     {
         "label": "Full Flexion",
         "color": "#FFB000",
-        "files": glob.glob(r"src\Test Results TB2\Full Flexion Test Final\*.csv")
+        "files": glob.glob(r"src\Test Results TB2 V2\Full Flexion force testing\*.csv")
     }
 ]
 
