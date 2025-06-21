@@ -15,6 +15,9 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
+import matplotlib
+matplotlib.use('TkAgg')  # Forces external window
+
 
 # === Config ===
 plot_every_n = 1
@@ -22,43 +25,43 @@ clip_time_seconds = 35
 regression_degree = 3
 
 # === Define folders with labels and colors ===
-# test_groups = [
-#     {
-#         "label": "Extended",
-#         "color": "red",
-#         "files": glob.glob(r"src\Test Results TB2\Extension Fingertip Test Final\15N\*.csv")
-#     },
-#     {
-#         "label": "Half Flexion",
-#         "color": "blue",
-#         "files": glob.glob(r"src\Test Results TB2\Half Flexion Fingertip Test Final\*.csv")
-#     },
-#     {
-#         "label": "Full Flexion",
-#         "color": "#FFB000",
-#         "files": glob.glob(r"src\Test Results TB2\Full Flexion Test Final\*.csv")
-#     }
-# ]
-
-
-# === Define folders with labels and colors ===
 test_groups = [
     {
         "label": "Extended",
         "color": "red",
-        "files": glob.glob(r"src\Test Results TB2 V2\Extended force testing\*.csv")
+        "files": glob.glob(r"src\Test Results TB2\Extension Fingertip Test Final\15N\*.csv")
     },
     {
         "label": "Half Flexion",
         "color": "blue",
-        "files": glob.glob(r"src\Test Results TB2 V2\Half Flexion force testing\*.csv")
+        "files": glob.glob(r"src\Test Results TB2\Half Flexion Fingertip Test Final\*.csv")
     },
     {
         "label": "Full Flexion",
         "color": "#FFB000",
-        "files": glob.glob(r"src\Test Results TB2 V2\Full Flexion force testing\*.csv")
+        "files": glob.glob(r"src\Test Results TB2\Full Flexion Test Final\*.csv")
     }
 ]
+
+
+# === Define folders with labels and colors ===
+# test_groups = [
+#     {
+#         "label": "Extended",
+#         "color": "red",
+#         "files": glob.glob(r"src\Test Results TB2 V2\Extended force testing\*.csv")
+#     },
+#     {
+#         "label": "Half Flexion",
+#         "color": "blue",
+#         "files": glob.glob(r"src\Test Results TB2 V2\Half Flexion force testing\*.csv")
+#     },
+#     {
+#         "label": "Full Flexion",
+#         "color": "#FFB000",
+#         "files": glob.glob(r"src\Test Results TB2 V2\Full Flexion force testing\*.csv")
+#     }
+# ]
 
 plt.figure("Force vs Tip Force with Fit")
 
@@ -284,66 +287,79 @@ ss_tot        = np.sum((tip_force_vals - np.mean(tip_force_vals)) ** 2)
 r_squared     = 1 - ss_res / ss_tot
 print(f"Coefficient of determination (R²): {r_squared:.3f}")
 
-
 # === Plotting ===
 plt.close('all')
+plt.clf()
+plt.cla()
 
-plt.figure("Position vs Target with control signal")
-plt.plot(time_vals_reference, tip_force_vals, label='Fingertip Force (N))')
-plt.plot(time_vals_reference, target_vals, label='Force Target (N)', linestyle='--')
-plt.plot(time_vals_reference, [c / 100 for c in control_vals], label='Control Signal (scaled)', linestyle='-.')
-plt.axhline(25.5, color='gray', linestyle='--', linewidth=1, label = 'Max Control signal [0,25]')
-plt.axhline(-25.5, color='gray', linestyle='--', linewidth=1)
+# --- Control signal, position and target ---
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(time_vals_reference, tip_force_vals, label='Fingertip Force (N))')
+ax.plot(time_vals_reference, target_vals, label='Force Target (N)', linestyle='--')
+ax.plot(time_vals_reference, [c / 100 for c in control_vals], label='Control Signal (scaled)', linestyle='-.')
+ax.axhline(25.5, color='gray', linestyle='--', linewidth=1, label='Max Control signal [0,25]')
+ax.axhline(-25.5, color='gray', linestyle='--', linewidth=1)
+ax.set_xlabel("Time (s)")
+ax.set_ylabel("Scaled Values")
+ax.set_title(f"Control Signal, Position & Target (RMSE = {rmse:.2f} N)")
+ax.legend()
+ax.grid(True)
 
-plt.xlabel("Time (s)")
-plt.ylabel("Scaled Values")
-plt.title(f"Control Signal, Position & Target (RMSE = {rmse:.2f} N)")
-plt.legend()
-plt.grid(True)
+# --- PID Terms ---
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(time_vals_reference, p_vals, label='P')
+ax.plot(time_vals_reference, i_vals, label='I')
+ax.plot(time_vals_reference, d_vals, label='D')
+ax.set_xlabel("Time (s)")
+ax.set_ylabel("PID Contributions")
+ax.set_title("P, I, D Terms Over Time")
+ax.legend()
+ax.grid(True)
 
-plt.figure("PID Terms")
-plt.plot(time_vals_reference, p_vals, label='P')
-plt.plot(time_vals_reference, i_vals, label='I')
-plt.plot(time_vals_reference, d_vals, label='D')
-plt.xlabel("Time (s)")
-plt.ylabel("PID Contributions")
-plt.title("P, I, D Terms Over Time")
-plt.legend()
-plt.grid(True)
+# --- Force Over Time ---
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(time_vals_reference, force_vals, 'b-')
+ax.set_xlabel("Time (s)")
+ax.set_ylabel("Force (N)")
+ax.set_title("Force Over Time")
+ax.grid(True)
 
-plt.figure("Force Over Time")
-plt.plot(time_vals_reference, force_vals, 'b-')
-plt.xlabel("Time (s)")
-plt.ylabel("Force (N)")
-plt.title("Force Over Time")
-plt.grid(True)
+# --- Tip Force Over Time ---
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(time_vals_reference, tip_force_vals, 'r-')
+ax.set_xlabel("Time (s)")
+ax.set_ylabel("Tip Force (N)")
+ax.set_title("Tip Force Over Time")
+ax.grid(True)
 
-plt.figure("Tip Force Over Time")
-plt.plot(time_vals_reference, tip_force_vals, 'r-')
-plt.xlabel("Time (s)")
-plt.ylabel("Tip Force (N)")
-plt.title("Tip Force Over Time")
-plt.grid(True)
+# --- Force vs Tip Force with Fit ---
+fig, ax = plt.subplots(figsize=(30, 12))
 
-plt.figure("Force vs Tip Force with Fit")
-# scatter
-plt.plot(force_vals, tip_force_vals, "b.", markersize = 1, label="Data")
-# regression line (sorted)
-sorted_idx   = np.argsort(force_vals)
-plt.plot(np.array(force_vals)[sorted_idx],
-         predicted[sorted_idx],
-         'r-', label=f'Polynomial Fit (degree {len(coeffs)-1})')
-plt.xlabel("Input Force (N)")
-plt.ylabel("Tip Force (N)")
-plt.title("Input Force vs Tip Force")
-plt.legend()
-plt.grid(True)
+# Plot data (no legend entry)
+data_plot = ax.plot(force_vals, tip_force_vals, "b.", markersize=1)
 
-plt.figure("RPM Over Time")
-plt.plot(time_vals_reference, rpm_vals, label='RPM', color='green')
-plt.xlabel("Time (s)")
-plt.ylabel("RPM")
-plt.title("RPM vs Time")
-plt.grid(True)
+# Plot regression line (with label)
+sorted_idx = np.argsort(force_vals)
+fit_plot = ax.plot(np.array(force_vals)[sorted_idx],
+                   predicted[sorted_idx],
+                   'r-', label=f'Polynomial Fit (degree {len(coeffs)-1})')
 
+# Only add regression line to legend manually
+ax.legend(handles=fit_plot)
+
+# Labels and grid
+ax.set_xlabel("Input Force (N)")
+ax.set_ylabel("Tip Force (N)")
+ax.set_title("Input Force vs Tip Force")
+ax.grid(True)
+
+# --- RPM Over Time ---
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(time_vals_reference, rpm_vals, label='RPM', color='green')
+ax.set_xlabel("Time (s)")
+ax.set_ylabel("RPM")
+ax.set_title("RPM vs Time")
+ax.grid(True)
+
+plt.tight_layout()
 plt.show()
