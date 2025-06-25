@@ -5,8 +5,8 @@ from glob import glob
 
 # === Parameters ===
 # csv_files = glob(r"src\Test results TB1\TB1_RAMP_TEST_SPRING1_SLOOP_24V_140CM_2025-05-06.csv")
-csv_files = glob(r"src/Test Results TB1/Spring 2 24V CHIRP tests/*.csv")
-# csv_files = glob(r"src/Test Results TB1/Spring 2 24V Ramp test/*.csv")
+# csv_files = glob(r"src/Test Results TB1/Spring 2 24V CHIRP tests/*.csv")
+csv_files = glob(r"src/Test Results TB1/Spring 2 24V Ramp test/*.csv")
 # csv_files = glob(r"src/Test Results TB1/Spring 2 30 V Ramp test/*.csv")
 # csv_files = glob(r"src/Test Results TB1/TB1_Ramp_test_24V_80CM_1_2025-05-01.csv")
 # csv_files = glob(r"src/Test Results TB1/TB1_Ramp_test_30V1_170CM_2025-05-01.csv")
@@ -175,6 +175,37 @@ plt.xlabel("Time (s)")
 plt.ylabel("RPM")
 plt.title("RPM vs Time")
 plt.grid(True)
+
+# === User-defined stiffness for converting force to displacement ===
+stiffness = 375  # N/m, change as needed
+
+# Convert everything to mm for comparison
+target_mm = [t * 1000 for t in target_vals]
+position_mm = [p * 1000 for p in position_vals]
+force_disp_mm = [(f / stiffness) * 1000 - 26 for f in force_vals]
+
+# Compute RMSE: Position vs Target
+rmse_position = np.sqrt(np.mean([(p - t) ** 2 for p, t in zip(position_mm, target_mm)]))
+
+# Compute RMSE: Force-derived vs Target
+rmse_force_disp = np.sqrt(np.mean([(fd - t) ** 2 for fd, t in zip(force_disp_mm, target_mm)]))
+
+print(f"📏 RMSE (Position vs Target): {rmse_position:.2f} mm")
+print(f"📏 RMSE (Force-derived vs Target): {rmse_force_disp:.2f} mm")
+
+plt.figure("Target vs Position vs Force/Stiffness")
+plt.plot(time_vals_reference, [t * 1000 for t in target_vals], label='Target (mm)', linestyle='--')
+plt.plot(time_vals_reference, [p * 1000 for p in position_vals], label='Position (mm)')
+plt.plot(time_vals_reference, [((f / stiffness) * 1000 )-26 for f in force_vals], label='Force-derived Position (mm)', linestyle=':')
+
+plt.xlabel("Time (s)")
+plt.ylabel("Displacement (mm)")
+plt.title(f"Displacement Comparison (K = {stiffness} N/m)\n"
+          f"RMSE Position vs target: {rmse_position:.2f} mm,\n" 
+          f"RMSE Force-derived position vs target: {rmse_force_disp:.2f} mm")
+plt.legend()
+plt.grid(True)
+
 
 plt.figure("Force Over Time")
 plt.plot(time_vals_reference, force_vals, label='Force (N)', color='red')
