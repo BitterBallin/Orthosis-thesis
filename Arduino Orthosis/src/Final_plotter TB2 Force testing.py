@@ -15,8 +15,18 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
+
 import matplotlib
-matplotlib.use('TkAgg')  # Forces external window
+matplotlib.use('TkAgg')  # Keep this if you want external window
+
+# Set global font size for tick labels
+matplotlib.rcParams.update({
+    'xtick.labelsize': 15,
+    'ytick.labelsize': 15,
+    'axes.labelsize': 15,       # Axis titles
+    'axes.titlesize': 15,       # Plot title
+    'legend.fontsize': 12       # Legend text
+})
 
 
 # === Config ===
@@ -117,17 +127,23 @@ for group in test_groups:
     force_sorted = np.array(all_force)[sorted_idx]
     pred_sorted = np.array(predicted)[sorted_idx]
 
-    plt.plot(all_force, all_tip_force, ',', color=group["color"], markersize=1, alpha=0.5, label=f"{group['label']} Data")
+    # plt.plot(all_force, all_tip_force, ',', color=group["color"], markersize=1, alpha=0.5, label=f"{group['label']} Data")
+    plt.plot(all_force, all_tip_force, ',', color=group["color"], markersize=1, alpha=0.5)
+
     plt.plot(force_sorted, pred_sorted, '-', color=group["color"], label=f"{group['label']} Fit (R²={r_squared:.3f})")
 
 # === Final plot formatting ===
 plt.xlabel("Input Force (N)")
 plt.ylabel("Fingertip Force (N)")
 plt.title("Input force vs Fingertip force Across Hand Positions")
-plt.legend()
+plt.legend(loc = "lower right")
 plt.grid(True)
+plt.xlim(0, 160)
+plt.ylim(0, 17)
 plt.tight_layout()
 plt.show()
+
+
 
 plot_every_n = 1  # Downsampling factor
 
@@ -353,13 +369,25 @@ ax.set_ylabel("Tip Force (N)")
 ax.set_title("Input Force vs Tip Force")
 ax.grid(True)
 
-# --- RPM Over Time ---
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.plot(time_vals_reference, rpm_vals, label='RPM', color='green')
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("RPM")
-ax.set_title("RPM vs Time")
-ax.grid(True)
+
+
+# Force large tick labels
+ax.tick_params(axis='both', which='major', labelsize=50)
+ax.set_xticks(ax.get_xticks())
+ax.set_yticks(ax.get_yticks())
+
+
+# # --- RPM Over Time ---
+# fig, ax = plt.subplots(figsize=(10, 6))
+# ax.plot(time_vals_reference, rpm_vals, label='RPM', color='green')
+# ax.set_xlabel("Time (s)")
+# ax.set_ylabel("RPM")
+# ax.set_title("RPM vs Time")
+# ax.grid(True)
+
+# Set axis limits
+ax.set_xlim(0, 160)
+ax.set_ylim(0, 17)
 
 plt.tight_layout()
 plt.show()

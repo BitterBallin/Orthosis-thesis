@@ -43,7 +43,7 @@ DX_vec = np.array(DX_vec)
 # =========================
 # Plot 1: Non-shifted wire 1 + wire 2
 # =========================
-plt.figure(figsize=(7, 5))
+plt.figure(figsize=(5, 4))
 plt.plot(theta_vec_trim, DX_vec, label='Contraction of wire 1')
 plt.plot(theta_vec_trim, DX_vec[::-1], 'r', label='Contraction of wire 2')
 plt.plot(theta_vec_trim, DX_vec + DX_vec[::-1], 'k--', label='Contraction of wire 1 + 2')
@@ -81,7 +81,7 @@ theta_overlap_valid = theta_overlap[valid_mask]
 DXsum_valid = DX1_overlap[valid_mask] + DX2_overlap[valid_mask]
 
 # Plot
-plt.figure(figsize=(7, 5))
+plt.figure(figsize=(5, 4))
 plt.plot(theta_vec_trim, DX_vec, label='Contraction of wire 1')
 plt.plot(theta_shifted, DX_vec[::-1], 'r', label='Contraction of wire 2')
 plt.plot(theta_overlap_valid, DXsum_valid, 'k--', label='Contraction of wire 1 + 2 ')
@@ -99,7 +99,7 @@ plt.tight_layout()
 # =========================
 dDX_dtheta = np.gradient(DX_vec, theta_vec_trim)
 
-plt.figure(figsize=(7, 5))
+plt.figure(figsize=(5, 4))
 plt.plot(theta_vec_trim, dDX_dtheta * 1000, label='d(Contraction)/d(Theta) wire 1')
 plt.plot(theta_vec_trim, dDX_dtheta[::-1] * 1000, 'r', label='d(Contraction)/d(Theta) wire 2')
 plt.xlabel('Theta [rad]')
